@@ -1079,7 +1079,9 @@ function backupDb() {
 backupDb();
 setInterval(backupDb, 6 * 3600 * 1000).unref();
 
-const server = app.listen(PORT, () => console.log(`🚀 Serveur actif sur http://localhost:${PORT}`));
-const shutdown = () => server.close(() => { try { db.close(); } catch (e) {} process.exit(0); });
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+const port = process.env.PORT || 3000;
+const host = process.env.HOST || '0.0.0.0';
+
+app.listen(port, host, () => {
+  console.log(`Server running on port ${port}`);
+});
