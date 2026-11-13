@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEBN.MA - BB Int Atelier de Maintenance</title>
+  <style>
+    :root {
+      --sebn-blue: #00458C;
+      --sebn-blue-hover: #003366;
+      --sebn-blue-light: #0066cc;
+      --sebn-red: #C51230;
+      --bg-dark: #0B1220;
+      --card-bg: #131E32;
+      --card-inner: #192742;
+      --border-color: #23334E;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --accent-green: #10B981;
+      --accent-amber: #F59E0B;
+      --accent-cyan: #06B6D4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #080E1A; border-bottom: 2px solid var(--sebn-blue); padding: 10px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-logo { background: var(--sebn-blue); color: #FFF; font-weight: 900; padding: 4px 10px; border-radius: 4px; font-size: 1.1rem; border-left: 3px solid var(--sebn-red); }
+    .brand-title { font-size: 1.25rem; font-weight: 800; }
+    .brand-sub { font-size: 0.75rem; color: var(--text-muted); }
+    nav { display: flex; gap: 6px; background: #0E1626; padding: 6px; border-radius: 8px; overflow-x: auto; }
+    .nav-btn { background: transparent; border: none; color: var(--text-muted); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; white-space: nowrap; transition: 0.2s; }
+    .nav-btn:hover { color: #FFF; background: var(--card-inner); }
+    .nav-btn.active { background: var(--sebn-blue); color: #FFF; }
+    .admin-tab { border-left: 1px solid var(--border-color); color: var(--accent-amber); }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .watchdog-tag { background: rgba(197, 18, 48, 0.15); border: 1px solid var(--sebn-red); color: #FCA5A5; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: none; }
+    .btn { background: var(--sebn-blue); color: #FFF; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+    .btn:hover { background: var(--sebn-blue-hover); }
+    .btn-danger { background: var(--sebn-red); }
+    .btn-success { background: var(--accent-green); }
+    .btn-secondary { background: var(--card-inner); border: 1px solid var(--border-color); }
+    main { flex: 1; padding: 20px 24px; max-width: 1650px; margin: 0 auto; width: 100%; }
+    .tab-view { display: none; }
+    .tab-view.active { display: block; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+    input, select, textarea { background: var(--card-inner); border: 1px solid var(--border-color); color: #FFF; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; outline: none; }
+    .data-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--border-color); font-size: 0.82rem; white-space: nowrap; }
+    .data-table th { background: #0E1728; color: var(--text-muted); padding: 12px; text-align: left; font-weight: 700; border-bottom: 1px solid var(--border-color); font-size: 0.72rem; }
+    .data-table td { padding: 11px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .data-table tr:hover td { background: var(--card-inner); }
+    .bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; }
+    .card-title { font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+    .card-metric { font-size: 1.8rem; font-weight: 800; margin-top: 6px; }
+    
+    .deck-container { background: #080F1E; border: 2px solid var(--sebn-blue); border-radius: 12px; padding: 24px; }
+    .deck-nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 14px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .slide-page { display: none; }
+    .slide-page.active { display: block; }
+    .slide-chip { background: var(--card-inner); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .slide-chip.active { background: var(--sebn-blue); color: #FFF; }
+    .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.85rem; }
+    .bar-track { flex: 1; height: 12px; background: var(--card-inner); border-radius: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--sebn-blue); border-radius: 6px; }
+
+    /* تصميم خريطة المناطق والألواح التفاعلية (Accordion) */
+    .zone-accordion { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 12px; overflow: hidden; transition: 0.2s; }
+    .zone-accordion-header { padding: 14px 20px; background: #0E1728; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+    .zone-accordion-header:hover { background: var(--card-inner); }
+    .zone-accordion-body { display: none; padding: 16px; border-top: 1px solid var(--border-color); background: var(--card-bg); }
+    .zone-accordion-body.open { display: block; }
+    .panel-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .panel-badge { background: var(--card-inner); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 700; }
+    .panel-badge span { color: var(--accent-amber); }
+    
+    .checkbox-group { background: #080E1A; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px; max-height: 155px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+    .checkbox-group label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+    .checkbox-group label:hover { background: var(--card-inner); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; width: 100%; max-width: 820px; max-height: 90vh; overflow-y: auto; padding: 24px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    
+    .photo-preview-box {
+      width: 100%;
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background: #080F1E;
+    }
+    .photo-preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    footer { background: #080E1A; border-top: 1px solid var(--border-color); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: var(--text-muted); }
+    :focus-visible { outline: 2px solid var(--accent-cyan); outline-offset: 2px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    #toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; }
+    .toast { background: var(--card-inner); border: 1px solid var(--border-color); border-left: 4px solid var(--sebn-red); padding: 10px 14px; border-radius: 8px; font-size: .85rem; max-width: 340px; white-space: pre-line; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+    .toast.ok { border-left-color: var(--accent-green); }
+    .empty-row td { text-align: center; color: var(--text-muted); padding: 28px; }
+    @media (max-width: 900px) {
+      header { flex-wrap: wrap; gap: 8px; } nav { width: 100%; } main { padding: 14px; }
+      .modal-grid { grid-template-columns: 1fr; } .modal-grid > * { grid-column: auto !important; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span class="brand-logo">SEBN.MA</span>
+      <div>
+        <div class="brand-title">BB Int</div>
+        <div class="brand-sub">Workshop Maintenance Standalone</div>
+      </div>
+    </div>
+
+    <nav id="navBar">
+      <button class="nav-btn active" onclick="switchTab('curative')">📋 1. Curative</button>
+      <button class="nav-btn" onclick="switchTab('preventive')">⚙️ 2. Preventive</button>
+      <button class="nav-btn" onclick="switchTab('carts')">🛒 3. Chariots</button>
+      <button class="nav-btn" onclick="switchTab('actions')">📌 4. Actions</button>
+      <button class="nav-btn" onclick="switchTab('passation')">🔄 5. Passation</button>
+      <button class="nav-btn" onclick="switchTab('panneaux')">🗺️ 6. Panneaux</button>
+      <button class="nav-btn admin-tab" id="adminDeckBtn" style="display:none;" onclick="switchTab('analytics')">📊 7. Cockpit</button>
+      <button class="nav-btn admin-tab" id="adminUsersBtn" style="display:none;" onclick="switchTab('users')">👥 8. Utilisateurs</button>
+      <button class="nav-btn admin-tab" id="adminCatalogBtn" style="display:none;" onclick="switchTab('catalog')">🖼️ 9. Catalogue & N° Points</button>
+      <button class="nav-btn admin-tab" id="adminConfigBtn" style="display:none;" onclick="switchTab('config')">⚙️ 10. Paramètres</button>
+    </nav>
+
+    <div class="header-actions">
+      <div id="watchdogBox" class="watchdog-tag">Déconnexion auto : <span id="secCount">30</span>s</div>
+      <div id="userProfileArea">
+        <button class="btn" onclick="openModal('loginModal')">🔐 Connexion</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- TAB 1: CURATIVE -->
+    <section id="view-curative" class="tab-view active">
+      <div class="toolbar">
+        <div class="filters">
+          <input type="text" id="opSearch" placeholder="Recherche rapide..." oninput="filterOperations()">
+          <select id="opZoneFilter" onchange="filterOperations()"><option value="">Toutes les Zones</option></select>
+          <select id="opMachineFilter" onchange="filterOperations()"><option value="">Toutes les Machines</option></select>
+        </div>
+        <div style="display:flex; gap:8px;"><button class="btn btn-secondary" onclick="exportOperationsCsv()">⬇ Exporter CSV</button><button class="btn btn-success" id="btnNewOp" style="display:none;" onclick="openNewOperationModal()">+ Nouvelle Opération</button></div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Matricule</th><th>Shift</th><th>Zone</th><th>Machine</th><th>N°</th><th>Code Réf</th><th>Point</th><th>Catégorie de pièce</th><th>Type de pièce</th><th>Type d'opération</th><th>Type de panne</th><th>PDR</th><th>Rép. (min)</th><th>Arrêt (min)</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="operationsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: PREVENTIVE -->
+    <section id="view-preventive" class="tab-view">
+      <div class="card" style="text-align:center; padding: 70px 20px;">
+        <h2 style="font-size:2rem; color:var(--sebn-blue); margin-bottom:12px;">Maintenance Préventive</h2>
+        <div style="color:var(--accent-amber); font-size:1.2rem; font-weight:800;">« En cours de développement »</div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CHARIOTS -->
+    <section id="view-carts" class="tab-view">
+      <div class="toolbar">
+        <h2>Inventaire des Chariots d'Outillage</h2>
+        <button class="btn btn-secondary" onclick="openCartMovements()">📜 Historique des Mouvements</button>
+      </div>
+      <div id="cartsContainer" class="bento-grid"></div>
+    </section>
+
+    <!-- TAB 4: ACTIONS -->
+    <section id="view-actions" class="tab-view">
+      <div class="toolbar">
+        <h2>Actions & Consignes du Chef d'Équipe</h2>
+        <button class="btn btn-success" id="btnNewTask" style="display:none;" onclick="openModal('newTaskModal')">+ Nouvelle Tâche</button>
+      </div>
+      <div id="tasksContainer" class="bento-grid"></div>
+    </section>
+
+    <!-- TAB 5: PASSATION -->
+    <section id="view-passation" class="tab-view">
+      <div class="card" style="max-width: 780px; margin: 0 auto;">
+        <h2 style="margin-bottom:12px;">Registre de Passation de Relève</h2>
+        <form onsubmit="handleHandoverSubmit(event)">
+          <div class="modal-grid">
+            <div>
+              <label class="card-title">Shift</label>
+              <select id="hoShift" style="width:100%;" required>
+                <option value="Shift 1">Shift 1 (Matin)</option>
+                <option value="Shift 2">Shift 2 (Après-midi)</option>
+                <option value="Shift 3">Shift 3 (Nuit)</option>
+              </select>
+            </div>
+            <div>
+              <label class="card-title">Technicien Sortant</label>
+              <input type="text" id="hoOutgoing" placeholder="Nom complet" style="width:100%;" required>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <label class="card-title">Synthèse de la relève</label>
+            <textarea id="hoSummary" rows="4" style="width:100%;" placeholder="Indiquer les blocages..." required></textarea>
+          </div>
+          <div style="margin-top:14px; text-align:right;">
+            <button type="submit" class="btn btn-success" id="hoSubmitBtn" disabled>Valider la Relève</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 6: PANNEAUX (خريطة تفاعلية: إظهار المناطق فقط ثم الفتح عند الكليك + البحث) -->
+    <section id="view-panneaux" class="tab-view">
+      <div class="toolbar">
+        <div>
+          <h2>Cartographie & Emplacement des Panneaux</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Cliquez sur une zone pour afficher ses panneaux ou utilisez la recherche</span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <input type="text" id="panelSearchInput" placeholder="🔍 Rechercher un panneau (Ex: Q7 LL 40)..." style="width:290px;" oninput="renderPanelsMap()">
+          <button class="btn btn-success" id="btnMovePanel" style="display:none;" onclick="openModal('movePanelModal')">🔁 Déplacer un Panneau</button>
+        </div>
+      </div>
+
+      <div id="zonePanelsGrid"></div>
+
+      <div class="toolbar" style="margin-top: 28px;">
+        <h3>Historique des Mouvements de Panneaux</h3>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr><th>Date & Heure</th><th>Nom Panneau</th><th>N° Panneau</th><th>Zone Origine</th><th>Zone Destination</th><th>Opérateur</th><th>Motif</th></tr>
+          </thead>
+          <tbody id="panelMovementsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 7: ANALYTICS COCKPIT -->
+    <section id="view-analytics" class="tab-view">
+      <div class="deck-container">
+        <div class="deck-nav">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-weight:800; font-size:1.1rem; color:var(--accent-cyan);">COCKPIT EXÉCUTIF :</span>
+            <button class="slide-chip active" onclick="showSlide(1)">01 | Synthèse</button>
+            <button class="slide-chip" onclick="showSlide(2)">02 | Performance</button>
+            <button class="slide-chip" onclick="showSlide(3)">03 | Pièces PDR</button>
+            <button class="slide-chip" onclick="showSlide(4)">04 | Top PDR</button>
+            <button class="slide-chip" onclick="showSlide(5)">05 | Zones</button>
+            <button class="slide-chip" onclick="showSlide(6)">06 | Pareto</button>
+            <button class="slide-chip" onclick="showSlide(7)">07 | Logique KPI</button>
+          </div>
+          <div>
+            <span class="card-title">Heures Ouvrées : </span>
+            <input type="number" id="deckOperatingHours" value="8" style="width:70px;" onchange="loadAnalyticsData()">
+            <input type="date" id="deckFrom" aria-label="Du" onchange="loadAnalyticsData()"> <input type="date" id="deckTo" aria-label="Au" onchange="loadAnalyticsData()">
+          </div>
+        </div>
+
+        <div id="slide-1" class="slide-page active">
+          <h2 style="margin-bottom:14px;">01 | Executive Dashboard</h2>
+          <div class="bento-grid">
+            <div class="card"><div class="card-title">Interventions Totales</div><div class="card-metric" id="sl1Interventions">0</div></div>
+            <div class="card"><div class="card-title">Pièces Consommées</div><div class="card-metric" id="sl1PartsQty">0</div></div>
+            <div class="card"><div class="card-title">Pièces Cassées (Qty)</div><div class="card-metric" id="sl1BrokenQty" style="color:var(--sebn-red);">0</div></div>
+            <div class="card"><div class="card-title">Pièces Endommagées</div><div class="card-metric" id="sl1DamagedQty" style="color:var(--accent-amber);">0</div></div>
+            <div class="card"><div class="card-title">Temps Total Interv. (min)</div><div class="card-metric" id="sl1TotalTime">0 min</div></div>
+            <div class="card"><div class="card-title">Coût Total Pièces (€)</div><div class="card-metric" id="sl1TotalCost" style="color:var(--accent-green);">0.00 €</div></div>
+            <div class="card"><div class="card-title">Coût Casse (€)</div><div class="card-metric" id="sl1CostCasse" style="color:var(--sebn-red);">0.00 €</div></div>
+            <div class="card"><div class="card-title">Coût Endommagé (€)</div><div class="card-metric" id="sl1CostDamaged" style="color:var(--accent-amber);">0.00 €</div></div>
+          </div>
+        </div>
+
+        <div id="slide-2" class="slide-page">
+          <h2 style="margin-bottom:14px;">02 | Performance par Type d'Intervention</h2>
+          <div class="card"><div id="sl2InterventionBars"></div></div>
+        </div>
+
+        <div id="slide-3" class="slide-page">
+          <h2 style="margin-bottom:14px;">03 | Spare Parts Analysis</h2>
+          <div class="bento-grid">
+            <div class="card"><div class="card-title">Coût Global Casse</div><div class="card-metric" id="sl3CasseCost" style="color:var(--sebn-red);">0.00 €</div></div>
+            <div class="card"><div class="card-title">Coût Remplacement</div><div class="card-metric" id="sl3ReplacementCost">0.00 €</div></div>
+            <div class="card"><div class="card-title">Arrêts Machine Directs</div><div class="card-metric" id="sl3MachineStops" style="color:var(--accent-amber);">0</div></div>
+          </div>
+        </div>
+
+        <div id="slide-4" class="slide-page">
+          <h2 style="margin-bottom:14px;">04 | Top Critical Spare Parts</h2>
+          <div class="card"><div id="sl4TopPartsBars"></div></div>
+        </div>
+
+        <div id="slide-5" class="slide-page">
+          <h2 style="margin-bottom:14px;">05 | Zone Analysis</h2>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div class="card"><h3>Temps par Zone (min)</h3><div id="sl5ZoneTimes" style="margin-top:10px;"></div></div>
+            <div class="card"><h3>Pièces par Zone (Qté)</h3><div id="sl5ZoneParts" style="margin-top:10px;"></div></div>
+          </div>
+        </div>
+
+        <div id="slide-6" class="slide-page">
+          <h2 style="margin-bottom:14px;">06 | Recurring Problems — Pareto</h2>
+          <div class="card"><div id="sl6DefectsPareto"></div></div>
+        </div>
+
+        <div id="slide-7" class="slide-page">
+          <h2 style="margin-bottom:14px;">07 | KPI Calculation Logic</h2>
+          <div class="bento-grid">
+            <div class="card"><div class="card-title">MTTR</div><div class="card-metric" id="sl7MTTR" style="color:var(--accent-green);">0 min</div></div>
+            <div class="card"><div class="card-title">MTBF</div><div class="card-metric" id="sl7MTBF" style="color:var(--accent-cyan);">N/A</div></div>
+            <div class="card"><div class="card-title">Disponibilité</div><div class="card-metric" id="sl7Availability" style="color:var(--accent-amber);">100%</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: UTILISATEURS -->
+    <section id="view-users" class="tab-view">
+      <div class="toolbar">
+        <div>
+          <h2>Personnel & Techniciens</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Gestion des comptes, modification et réinitialisation</span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="text" id="userSearchInput" placeholder="🔍 Rechercher par Nom ou Matricule..." style="width:280px;" oninput="renderUsersList()">
+          <button class="btn btn-success" onclick="openModal('addUserModal')">+ Nouvel Utilisateur</button>
+        </div>
+      </div>
+      <div id="usersCardsContainer" class="bento-grid"></div>
+      <div class="card" id="auditCard" style="display:none; margin-top:20px;">
+        <h3>Journal d'audit</h3>
+        <div style="overflow-x:auto; max-height:320px; margin-top:10px;">
+          <table class="data-table"><thead><tr><th>Date (UTC)</th><th>Acteur</th><th>Action</th><th>Détail</th><th>IP</th></tr></thead><tbody id="auditBody"></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 9: CATALOGUE & GESTION DES POINTS -->
+    <section id="view-catalog" class="tab-view">
+      <div class="toolbar">
+        <div>
+          <h2>🖼️ Catalogue & N° Points</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Points, Références, Catégories, Tarifs et Photos</span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn btn-secondary" onclick="rescanPhotosFolder()">🔄 Relier photos du dossier</button>
+          <span class="panel-badge" id="catalogTotalCount">0 Point(s)</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3>+ Ajouter une Nouvelle Référence / Point</h3>
+        <form onsubmit="handleNewPointSubmit(event)" style="margin-top:12px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:12px;">
+            <div>
+              <label class="card-title">Code Référence</label>
+              <input type="text" id="cfgPointRef" placeholder="Ex: 3D0 971 838 N" style="width:100%;" required>
+            </div>
+            <div>
+              <label class="card-title">Nom du Point</label>
+              <input type="text" id="cfgPointName" placeholder="Ex: KB-350" style="width:100%;" required>
+            </div>
+            <div>
+              <label class="card-title">Catégorie de pièce</label>
+              <input type="text" id="cfgPointFamily" placeholder="Ex: Clip, Frein..." style="width:100%;" required>
+            </div>
+            <div>
+              <label class="card-title">Prix Unitaire (€)</label>
+              <input type="number" step="0.01" id="cfgPointPrice" placeholder="Ex: 0.85" style="width:100%;">
+            </div>
+            <div>
+              <label class="card-title">Photo (Optionnel)</label>
+              <input type="file" id="cfgPointFile" accept="image/*" style="width:100%;" onchange="previewConfigImage(this)">
+            </div>
+          </div>
+          <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+            <div id="cfgImgPreviewContainer" style="font-size:0.8rem; color:var(--accent-green); font-weight:700;"></div>
+            <button type="submit" class="btn btn-success">Enregistrer le Point</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="toolbar">
+        <input type="text" id="catalogSearchInput" placeholder="🔍 Rechercher un Point, une Référence ou une Catégorie..." style="width:100%; max-width:520px;" oninput="renderConfigPointsList()">
+      </div>
+
+      <div id="pointsCatalogList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:14px;"></div>
+    </section>
+
+    <!-- TAB 10: PARAMÈTRES (الربط المتعدد 1-to-Many + إدارة الألواح CRUD) -->
+    <section id="view-config" class="tab-view">
+      <div class="toolbar">
+        <div>
+          <h2>⚙️ Paramètres & Configuration Atelier</h2>
+          <span style="font-size:0.8rem; color:var(--text-muted);">Gérez les Liaisons Multi-Choix (Opération ➔ Pannes & Sources PDR), les Panneaux et les Listes</span>
+        </div>
+      </div>
+
+      <!-- 1. بطاقة الربط المتعدد 1-to-Many -->
+      <div class="card" style="border:1.5px solid var(--accent-cyan); margin-bottom: 20px;">
+        <h3 style="color:var(--accent-cyan);">🔗 Liaison Multi-Choix (Type d'Opération ➔ Pannes possibles & Sources PDR possibles)</h3>
+        <p style="font-size:0.78rem; color:var(--text-muted); margin-top:4px; margin-bottom:12px;">
+          Sélectionnez une opération, puis cochez un ou plusieurs types de pannes et sources PDR qui apparaîtront au technicien.
+        </p>
+        <form onsubmit="handleNewMappingSubmit(event)">
+          <div style="display:grid; grid-template-columns: 1fr 1.3fr 1.3fr; gap:14px; margin-bottom:12px;">
+            <div>
+              <label class="card-title">1. Type d'Opération</label>
+              <select id="mapOpSelect" style="width:100%; margin-top:6px;" onchange="loadExistingMappingForOp(this.value)" required></select>
+            </div>
+            <div>
+              <label class="card-title" style="color:var(--accent-amber);">2. Types de Panne autorisés (Cochez)</label>
+              <div id="mapDefectsCheckboxes" class="checkbox-group" style="margin-top:6px;"></div>
+            </div>
+            <div>
+              <label class="card-title" style="color:var(--accent-green);">3. Sources PDR autorisées (Cochez)</label>
+              <div id="mapSourcesCheckboxes" class="checkbox-group" style="margin-top:6px;"></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <button type="submit" class="btn btn-success">Enregistrer la Liaison Multi-Choix</button>
+          </div>
+        </form>
+        <div id="cfgMappingsList" style="max-height:260px; overflow-y:auto; margin-top:14px;"></div>
+      </div>
+
+      <!-- 2. بطاقة إدارة الألواح (إضافة، تعديل، حذف) -->
+      <div class="card" style="border:1.5px solid var(--accent-amber); margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+          <div>
+            <h3 style="color:var(--accent-amber);">🗺️ Gestion des Panneaux (Ajout, Modification & Suppression)</h3>
+            <p style="font-size:0.78rem; color:var(--text-muted);">Ajoutez un nouveau panneau, modifiez son nom/zone ou supprimez-le définitivement.</p>
+          </div>
+          <input type="text" id="cfgPanelSearch" placeholder="🔍 Filtrer les panneaux..." style="width:240px;" oninput="renderConfigPanelsList()">
+        </div>
+
+        <form onsubmit="handleAddPanelSubmit(event)" style="display:grid; grid-template-columns: 2fr 1fr 1.5fr auto; gap:10px; margin-bottom:14px;">
+          <input type="text" id="newPanelName" placeholder="Nom du Panneau (Ex: Q7 LL 40)" required>
+          <input type="text" id="newPanelNumber" placeholder="N° (Ex: 40 ou -)">
+          <select id="newPanelZone" required></select>
+          <button type="submit" class="btn btn-success">+ Ajouter le Panneau</button>
+        </form>
+
+        <div id="cfgPanelsList" style="max-height:280px; overflow-y:auto; display:grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap:8px;"></div>
+      </div>
+
+      <!-- 3. القوائم العامة -->
+      <div class="bento-grid">
+        <div class="card">
+          <h3>📍 Liste des Zones</h3>
+          <div style="display:flex; gap:8px; margin: 12px 0;">
+            <input type="text" id="newZoneInput" placeholder="Ex: TFL-04" style="flex:1;">
+            <button class="btn btn-success" onclick="addNewOption('zone', 'newZoneInput')">+</button>
+          </div>
+          <div id="cfgZonesList" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card">
+          <h3>🤖 Liste des Machines</h3>
+          <div style="display:flex; gap:8px; margin: 12px 0;">
+            <input type="text" id="newMachineInput" placeholder="Ex: Q7-LL, MTT-Q7-01..." style="flex:1;">
+            <button class="btn btn-success" onclick="addNewOption('machine', 'newMachineInput')">+</button>
+          </div>
+          <div id="cfgMachinesList" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card">
+          <h3>📦 Liste des Sources PDR</h3>
+          <div style="display:flex; gap:8px; margin: 12px 0;">
+            <input type="text" id="newSourceInput" placeholder="Ex: Magasin BB, Chariot..." style="flex:1;">
+            <button class="btn btn-success" onclick="addNewOption('pdr_source', 'newSourceInput')">+</button>
+          </div>
+          <div id="cfgSourcesList" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card">
+          <h3>🧩 Types de Pièce</h3>
+          <div style="display:flex; gap:8px; margin: 12px 0;">
+            <input type="text" id="newPieceTypeInput" placeholder="Ex: CP, FREIN, PHOTO CELLULE..." style="flex:1;">
+            <button class="btn btn-success" onclick="addNewOption('piece_type', 'newPieceTypeInput')">+</button>
+          </div>
+          <div id="cfgPieceTypesList" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card">
+          <h3>⚙️ Types d'Opération</h3>
+          <div style="display:flex; gap:8px; margin: 12px 0;">
+            <input type="text" id="newOpTypeInput" placeholder="Ex: Changement, Sérrage..." style="flex:1;">
+            <button class="btn btn-success" onclick="addNewOption('operation_type', 'newOpTypeInput')">+</button>
+          </div>
+          <div id="cfgOpTypesList" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card">
+          <h3>⚠️ Types de Panne</h3>
+          <div style="display:flex; gap:8px; margin: 12px 0;">
+            <input type="text" id="newDefectInput" placeholder="Ex: Casse, Resserrage..." style="flex:1;">
+            <button class="btn btn-success" onclick="addNewOption('defect_type', 'newDefectInput')">+</button>
+          </div>
+          <div id="cfgDefectsList" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL NOUVELLE OPÉRATION -->
+  <div class="modal-overlay" id="opModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Enregistrer une Intervention de Maintenance</h3>
+        <button class="btn btn-danger" onclick="closeModal('opModal')">✕</button>
+      </div>
+      <form onsubmit="handleNewOpSubmit(event)">
+        <div class="modal-grid">
+          <div><label class="card-title">Date</label><input type="date" id="fDate" style="width:100%;" required></div>
+          <div>
+            <label class="card-title">Shift</label>
+            <select id="fShift" style="width:100%;" required>
+              <option value="Shift 1">Shift 1 (Matin)</option>
+              <option value="Shift 2">Shift 2 (Après-midi)</option>
+              <option value="Shift 3">Shift 3 (Nuit)</option>
+            </select>
+          </div>
+          <div><label class="card-title">Zone</label><select id="fZone" style="width:100%;" required></select></div>
+          <div><label class="card-title">Machine / Panneau</label><select id="fMachine" style="width:100%;" required></select></div>
+
+          <div style="grid-column: span 2; display: grid; grid-template-columns: 1fr 200px; gap: 12px; background: var(--card-inner); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); align-items: stretch;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div>
+                <label class="card-title">N° Machine</label>
+                <input type="text" id="fPanelNumber" placeholder="Ex: 01" style="width:100%; padding:6px 10px; font-size:0.82rem;" required>
+              </div>
+
+              <div>
+                <label class="card-title" style="color:var(--accent-amber); font-weight:700;">Code Référence (Auto)</label>
+                <input type="text" id="fRefCode" placeholder="Code Réf..." style="width:100%; padding:6px 10px; font-size:0.82rem; background:#080E1A; color:var(--accent-amber); font-weight:700;" readonly required>
+              </div>
+
+              <div>
+                <label class="card-title" style="color:var(--accent-cyan); font-weight:800;">Nom du Point</label>
+                <input list="pointsDatalist" id="fPointName" placeholder="Ex: KB, SS..." style="width:100%; padding:6px 10px; font-size:0.82rem; border:1.5px solid var(--accent-cyan);" oninput="onPointSearch(this.value)" autocomplete="off" required>
+                <datalist id="pointsDatalist"></datalist>
+              </div>
+
+              <div>
+                <label class="card-title">Catégorie de pièce (Auto)</label>
+                <input type="text" id="fPointType" placeholder="Catégorie Auto..." style="width:100%; padding:6px 10px; font-size:0.82rem; background:#080E1A; color:#FFF; font-weight:700;" readonly required>
+              </div>
+
+              <input type="hidden" id="fUnitPrice" value="0">
+            </div>
+
+            <div style="display: flex; flex-direction: column;">
+              <label class="card-title">Photo Pièce (Auto)</label>
+              <div class="photo-preview-box" id="pointImageDisplay" style="flex: 1; height: auto; min-height: 95px; margin-top: 4px; padding: 4px;">
+                <span style="color:var(--text-muted); font-size:0.75rem; text-align:center;">Photo automatique</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1. نوع العملية -->
+          <div>
+            <label class="card-title" style="color:var(--accent-cyan); font-weight:700;">Type d'opération</label>
+            <select id="fInterventionType" style="width:100%; border:1.5px solid var(--accent-cyan);" onchange="onOperationTypeChange(this.value)" required></select>
+          </div>
+
+          <!-- 2. نوع العطب (قائمة ديناميكية حسب نوع العملية) -->
+          <div>
+            <label class="card-title" style="color:var(--accent-amber); font-weight:700;">Type de panne (Selon Opération)</label>
+            <select id="fDefectType" style="width:100%; background:#080E1A; color:var(--accent-amber); font-weight:700; border:1.5px solid var(--accent-amber);" required></select>
+          </div>
+
+          <!-- 3. مصدر القطعة PDR (قائمة ديناميكية حسب نوع العملية) -->
+          <div style="grid-column: span 2; display: grid; grid-template-columns: 2fr 1fr; gap: 10px; background: rgba(16, 185, 129, 0.05); border: 1.5px solid var(--accent-green); padding: 10px; border-radius: 8px;">
+            <div>
+              <label class="card-title" style="color:var(--accent-green); font-weight:700;">PDR (Source Pièce selon Opération)</label>
+              <select id="fPdrSource" style="width:100%; background:#080E1A; color:var(--accent-green); font-weight:800;" onchange="onPdrSourceChange(this.value)" required></select>
+            </div>
+            <div>
+              <label class="card-title">Quantité</label>
+              <input type="number" id="fPartQty" value="1" min="0" style="width:100%; padding:6px 10px; font-size:0.85rem;">
+            </div>
+          </div>
+
+          <div>
+            <label class="card-title">Type de pièce</label>
+            <select id="fPieceType" style="width:100%;" required></select>
+          </div>
+
+          <div><label class="card-title">Durée Réparation (min)</label><input type="number" id="fRepairDuration" value="5" min="0" style="width:100%;" required></div>
+          <div style="grid-column: span 2;"><label class="card-title">Durée Arrêt (min)</label><input type="number" id="fDowntimeDuration" value="0" min="0" style="width:100%;" required></div>
+        </div>
+        <div style="margin-top:10px;"><label><input type="checkbox" id="fStopsMachine"> Arrêt Machine Directement Causé</label></div>
+        <div style="margin-top:10px;"><label class="card-title">Observations</label><input type="text" id="fObservations" style="width:100%;"></div>
+        <div style="margin-top:16px; text-align:right;"><button type="submit" class="btn btn-success">Enregistrer l'Intervention</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFIER UN PANNEAU -->
+  <div class="modal-overlay" id="editPanelModal">
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-header">
+        <h3>✏️ Modifier le Panneau</h3>
+        <button class="btn btn-danger" onclick="closeModal('editPanelModal')">✕</button>
+      </div>
+      <form onsubmit="handleEditPanelSubmit(event)">
+        <input type="hidden" id="editPanelId">
+        <div style="margin-bottom:12px;">
+          <label class="card-title">Nom du Panneau</label>
+          <input type="text" id="editPanelName" style="width:100%;" required>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label class="card-title">N° du Panneau</label>
+          <input type="text" id="editPanelNumber" style="width:100%;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="card-title">Zone Actuelle</label>
+          <select id="editPanelZone" style="width:100%;" required></select>
+        </div>
+        <button type="submit" class="btn btn-success" style="width:100%;">Enregistrer les Modifications</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFIER UN POINT -->
+  <div class="modal-overlay" id="editPointModal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <h3>✏️ Modifier l'Élément du Catalogue</h3>
+        <button class="btn btn-danger" onclick="closeModal('editPointModal')">✕</button>
+      </div>
+      <form onsubmit="handleEditPointSubmit(event)">
+        <input type="hidden" id="editPointId">
+        <div class="modal-grid">
+          <div><label class="card-title">Code Référence</label><input type="text" id="editPointRef" style="width:100%;" required></div>
+          <div><label class="card-title">Nom du Point</label><input type="text" id="editPointName" style="width:100%;" required></div>
+          <div><label class="card-title">Catégorie de pièce</label><input type="text" id="editPointFamily" style="width:100%;" required></div>
+          <div><label class="card-title">Prix Unitaire (€)</label><input type="number" step="0.01" id="editPointPrice" style="width:100%;"></div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="card-title">Changer la Photo (Optionnel)</label>
+          <input type="file" id="editPointFile" accept="image/*" style="width:100%;" onchange="previewEditImage(this)">
+        </div>
+        <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+          <span id="editImgStatus" style="font-size:0.8rem; color:var(--accent-green);"></span>
+          <button type="submit" class="btn btn-success">Enregistrer les Modifications</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL NOUVELLE TÂCHE -->
+  <div class="modal-overlay" id="newTaskModal">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header"><h3>Ajouter une Tâche Atelier</h3><button class="btn btn-danger" onclick="closeModal('newTaskModal')">✕</button></div>
+      <form onsubmit="handleNewTaskSubmit(event)">
+        <div style="margin-bottom:12px;"><label class="card-title">Titre</label><input type="text" id="tTitle" style="width:100%;" required></div>
+        <div style="margin-bottom:12px;"><label class="card-title">Description</label><textarea id="tDesc" style="width:100%;" rows="3"></textarea></div>
+        <div class="modal-grid">
+          <div><label class="card-title">Zone</label><select id="tZone" style="width:100%;"></select></div>
+          <div>
+            <label class="card-title">Shift</label>
+            <select id="tShift" style="width:100%;">
+              <option value="Shift 1">Shift 1</option>
+              <option value="Shift 2">Shift 2</option>
+              <option value="Shift 3">Shift 3</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:16px; text-align:right;"><button type="submit" class="btn btn-success" style="width:100%;">Créer</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL MOVE PANNEAU -->
+  <div class="modal-overlay" id="movePanelModal">
+    <div class="modal" style="max-width:460px;">
+      <div class="modal-header"><h3>Transférer un Panneau</h3><button class="btn btn-danger" onclick="closeModal('movePanelModal')">✕</button></div>
+      <form onsubmit="handlePanelTransferSubmit(event)">
+        <div style="margin-bottom:12px;"><label class="card-title">Panneau</label><select id="moveSelectPanel" style="width:100%;" required></select></div>
+        <div style="margin-bottom:12px;"><label class="card-title">Destination</label><select id="moveTargetZone" style="width:100%;" required></select></div>
+        <div style="margin-bottom:16px;"><label class="card-title">Motif</label><input type="text" id="moveReason" style="width:100%;" required></div>
+        <button type="submit" class="btn btn-success" style="width:100%;">Valider</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL AJOUT UTILISATEUR -->
+  <div class="modal-overlay" id="addUserModal">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header"><h3>+ Ajouter un Utilisateur</h3><button class="btn btn-danger" onclick="closeModal('addUserModal')">✕</button></div>
+      <form onsubmit="handleAddUserSubmit(event)">
+        <div class="modal-grid">
+          <div><label class="card-title">Identifiant (Username)</label><input type="text" id="uUsername" style="width:100%;" required></div>
+          <div><label class="card-title">Mot de Passe</label><input type="password" id="uPassword" style="width:100%;" required></div>
+          <div><label class="card-title">Matricule</label><input type="text" id="uMatricule" style="width:100%;" required></div>
+          <div>
+            <label class="card-title">Rôle</label>
+            <select id="uRole" style="width:100%;" required>
+              <option value="technician">Technicien</option>
+              <option value="team_leader">Chef d'Équipe</option>
+              <option value="supervisor">Superviseur / Admin</option>
+            </select>
+          </div>
+          <div style="grid-column: span 2;"><label class="card-title">Nom & Prénom</label><input type="text" id="uFullName" style="width:100%;" required></div>
+        </div>
+        <div style="margin-top:16px; text-align:right;"><button type="submit" class="btn btn-success" style="width:100%;">Créer l'Utilisateur</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFIER UTILISATEUR -->
+  <div class="modal-overlay" id="editUserModal">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header"><h3>✏️ Modifier l'Utilisateur</h3><button class="btn btn-danger" onclick="closeModal('editUserModal')">✕</button></div>
+      <form onsubmit="handleEditUserSubmit(event)">
+        <input type="hidden" id="editUserId">
+        <div class="modal-grid">
+          <div><label class="card-title">Identifiant</label><input type="text" id="editUserUsername" style="width:100%;" required></div>
+          <div><label class="card-title">Nouveau Mot de Passe (Optionnel)</label><input type="password" id="editUserPassword" placeholder="Laisser vide si inchangé" style="width:100%;"></div>
+          <div><label class="card-title">Matricule</label><input type="text" id="editUserMatricule" style="width:100%;" required></div>
+          <div>
+            <label class="card-title">Rôle</label>
+            <select id="editUserRole" style="width:100%;" required>
+              <option value="technician">Technicien</option>
+              <option value="team_leader">Chef d'Équipe</option>
+              <option value="supervisor">Superviseur / Admin</option>
+            </select>
+          </div>
+          <div style="grid-column: span 2;"><label class="card-title">Nom & Prénom</label><input type="text" id="editUserFullName" style="width:100%;" required></div>
+        </div>
+        <div style="margin-top:16px; text-align:right;"><button type="submit" class="btn btn-success" style="width:100%;">Enregistrer les Modifications</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL MON COMPTE -->
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header"><h3>👤 Mon Compte (Sécurité)</h3><button class="btn btn-danger" onclick="closeModal('profileModal')">✕</button></div>
+      <form onsubmit="handleProfileUpdateSubmit(event)">
+        <div style="margin-bottom:12px;">
+          <label class="card-title">Identifiant (Username)</label>
+          <input type="text" id="pUsername" style="width:100%;" required>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label class="card-title">Nouveau Mot de Passe</label>
+          <input type="password" id="pPassword" placeholder="8 caractères min., lettres + chiffres" autocomplete="new-password" style="width:100%;">
+        </div>
+        <button type="submit" class="btn btn-success" style="width:100%;">Mettre à jour mon profil</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL LOGIN -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-header"><h3>Connexion Atelier</h3><button class="btn btn-danger" onclick="closeModal('loginModal')">✕</button></div>
+      <form onsubmit="handleLoginSubmit(event)">
+        <div style="margin-bottom:12px;"><label class="card-title">Matricule ou Identifiant</label><input type="text" id="lUser" style="width:100%;" required></div>
+        <div style="margin-bottom:16px;"><label class="card-title">Mot de Passe</label><input type="password" id="lPass" style="width:100%;" required></div>
+        <button type="submit" class="btn btn-success" style="width:100%;">Se Connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL HISTORIQUE CHARIOTS -->
+  <div class="modal-overlay" id="cartMovementsModal">
+    <div class="modal">
+      <div class="modal-header"><h3>Historique Outillage</h3><button class="btn btn-danger" onclick="closeModal('cartMovementsModal')">✕</button></div>
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Technicien</th><th>Article</th><th>Action</th><th>Quantité</th></tr></thead>
+        <tbody id="cartMovementsTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+
+  <footer>
+    <div>SEBN.MA • Sumitomo Electric Bordnetze Morocco</div>
+    <div>BB Int Standalone Maintenance Platform</div>
+  </footer>
+
+  <script>
+    let currentUser = null;
+    let token = sessionStorage.getItem('sebn_token');
+    let config = { options: [], mappings: [] };
+    let pointsCatalog = [];
+    let usersList = [];
+    let operationMappings = [];
+    let operations = [];
+    let panels = [];
+    let openZonesSet = new Set();
+    let watchdog = null;
+    let secLeft = 30;
+    let uploadedPointBase64 = '';
+    let editUploadedBase64 = '';
+    let opLimit = 200;
+    let filteredOps = [];
+
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function toast(msg, type = '') {
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = msg;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+    window.alert = m => toast(String(m), /✓|succès|validée|reliée/i.test(m) ? 'ok' : '');
+
+    // Ajoute automatiquement le jeton, gère session expirée / mot de passe à changer / serveur injoignable
+    const rawFetch = window.fetch.bind(window);
+    window.fetch = async (url, opts = {}) => {
+      const isApi = typeof url === 'string' && url.startsWith('/api/');
+      if (isApi && token) opts = { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` } };
+      let res;
+      try { res = await rawFetch(url, opts); }
+      catch (e) { toast('Serveur injoignable. Vérifiez la connexion.'); throw e; }
+      if (isApi && url !== '/api/login') {
+        if (res.status === 401 && token) { toast('Session expirée, reconnexion…'); setTimeout(logout, 800); }
+        if (res.status === 403) {
+          const body = await res.clone().json().catch(() => ({}));
+          if (body.code === 'PASSWORD_CHANGE_REQUIRED') openForcedPasswordChange();
+        }
+      }
+      return res;
+    };
+
+    function openForcedPasswordChange() {
+      if (!currentUser) return;
+      document.getElementById('pUsername').value = currentUser.username || '';
+      openModal('profileModal');
+      toast('Pour votre sécurité, choisissez un nouveau mot de passe (8 caractères min., lettres + chiffres).');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    });
+
+    function exportOperationsCsv() {
+      const cols = ['operation_date', 'matricule', 'shift', 'zone', 'panel_name', 'panel_number', 'reference_code', 'point_name', 'point_type', 'item_inspected', 'intervention_type', 'defect_type', 'spare_part_name', 'spare_parts_qty', 'total_cost_eur', 'repair_duration', 'downtime_duration', 'observations'];
+      const cell = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+      const lines = [cols.join(';'), ...filteredOps.map(o => cols.map(c => cell(o[c])).join(';'))];
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+      a.download = `interventions_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    async function toggleTask(id, status) {
+      await fetch(`/api/tasks/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+      loadTasks();
+    }
+
+    async function loadAudit() {
+      const card = document.getElementById('auditCard');
+      if (!currentUser || !['admin', 'supervisor'].includes(currentUser.role)) { card.style.display = 'none'; return; }
+      const res = await fetch('/api/audit');
+      if (!res.ok) return;
+      const rows = await res.json();
+      card.style.display = 'block';
+      document.getElementById('auditBody').innerHTML = rows.map(r => `<tr><td>${esc(r.created_at)}</td><td>${esc(r.actor)}</td><td><b>${esc(r.action)}</b></td><td>${esc(r.detail)}</td><td>${esc(r.ip)}</td></tr>`).join('');
+    }
+
+    function resetWatchdog() {
+      if (!currentUser) return;
+      secLeft = 30;
+      const el = document.getElementById('secCount');
+      if (el) el.innerText = secLeft;
+      clearInterval(watchdog);
+      watchdog = setInterval(() => {
+        secLeft--;
+        if (el) el.innerText = secLeft;
+        if (secLeft <= 0) { 
+          clearInterval(watchdog); 
+          logout(); 
+        }
+      }, 1000);
+    }
+    ['mousemove', 'keydown', 'click'].forEach(evt => window.addEventListener(evt, resetWatchdog));
+
+    function parseJwt(t) {
+      try {
+        const base64Url = t.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) { return null; }
+    }
+
+    function normStr(str) {
+      if (!str) return '';
+      return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    }
+
+    function parseArrayField(val, fallback) {
+      if (!val) return fallback;
+      if (Array.isArray(val)) return val.length ? val : fallback;
+      try {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        if (typeof val === 'string' && val.trim() !== '') return [val.trim()];
+      }
+      return fallback;
+    }
+
+    // تم إصلاح التحديث اللانهائي هنا: عدم استدعاء logout() عند الفتح العادي
+    async function init() {
+      document.querySelectorAll('.modal-overlay').forEach(m => { m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true'); });
+      if (!token) { updateUIState(); openModal('loginModal'); return; }
+      const me = await fetch('/api/me');
+      if (!me.ok) return;
+      currentUser = await me.json();
+      updateUIState();
+      if (currentUser.must_change_password) return openForcedPasswordChange();
+      await loadConfig();
+      await Promise.all([loadPointsCatalog(), loadOperationMappings(), loadPanels(), loadPanelMovements(), loadOperations(), loadCarts(), loadTasks()]);
+    }
+
+    async function loadConfig() {
+      const res = await fetch('/api/config');
+      config = await res.json();
+      
+      const zSel = document.getElementById('fZone');
+      const opZSel = document.getElementById('opZoneFilter');
+      const targetZSel = document.getElementById('moveTargetZone');
+      const newPanelZSel = document.getElementById('newPanelZone');
+      const editPanelZSel = document.getElementById('editPanelZone');
+      const tZoneSel = document.getElementById('tZone');
+
+      zSel.innerHTML = '';
+      targetZSel.innerHTML = '';
+      if (newPanelZSel) newPanelZSel.innerHTML = '';
+      if (editPanelZSel) editPanelZSel.innerHTML = '';
+      tZoneSel.innerHTML = '<option value="Toutes">Toutes</option>';
+      opZSel.innerHTML = '<option value="">Toutes les Zones</option>';
+
+      config.options.filter(o => o.category === 'zone').forEach(o => {
+        zSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        targetZSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        if (newPanelZSel) newPanelZSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        if (editPanelZSel) editPanelZSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        tZoneSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        opZSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+      });
+
+      populateMachineDropdowns();
+
+      const pieceTypeSel = document.getElementById('fPieceType');
+      if (pieceTypeSel) {
+        pieceTypeSel.innerHTML = '';
+        config.options.filter(o => o.category === 'piece_type').forEach(o => {
+          pieceTypeSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        });
+      }
+
+      const opTypeSel = document.getElementById('fInterventionType');
+      const mapOpSel = document.getElementById('mapOpSelect');
+      if (opTypeSel) {
+        opTypeSel.innerHTML = '';
+        if (mapOpSel) mapOpSel.innerHTML = '';
+        config.options.filter(o => o.category === 'operation_type').forEach(o => {
+          opTypeSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+          if (mapOpSel) mapOpSel.innerHTML += `<option value="${esc(o.option_value)}">${esc(o.option_value)}</option>`;
+        });
+      }
+
+      renderMappingCheckboxes();
+    }
+
+    function populateMachineDropdowns() {
+      const mSel = document.getElementById('fMachine');
+      const opMSel = document.getElementById('opMachineFilter');
+      if (!mSel || !opMSel) return;
+
+      const machineOpts = config.options.filter(o => o.category === 'machine').map(o => o.option_value);
+      const panelNames = panels.map(p => p.panel_name);
+      const allMachines = [...new Set([...machineOpts, ...panelNames])];
+
+      mSel.innerHTML = allMachines.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+      opMSel.innerHTML = '<option value="">Toutes les Machines</option>' + allMachines.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+    }
+
+    // === إدارة الربط المتعدد 1-to-Many ===
+    function renderMappingCheckboxes() {
+      const defBox = document.getElementById('mapDefectsCheckboxes');
+      const srcBox = document.getElementById('mapSourcesCheckboxes');
+      if (!defBox || !srcBox) return;
+
+      const defects = config.options.filter(o => o.category === 'defect_type').map(o => o.option_value);
+      let sources = config.options.filter(o => o.category === 'pdr_source').map(o => o.option_value);
+      if (sources.length === 0) sources = ['0', 'Magasin BB', 'Chariot', 'Magasin Central'];
+
+      defBox.innerHTML = defects.map(d => `
+        <label><input type="checkbox" class="map-def-cb" value="${esc(d)}"> <span>${esc(d)}</span></label>
+      `).join('');
+
+      srcBox.innerHTML = sources.map(s => `
+        <label><input type="checkbox" class="map-src-cb" value="${esc(s)}"> <span>${esc(s)}</span></label>
+      `).join('');
+
+      const currentOp = document.getElementById('mapOpSelect')?.value;
+      if (currentOp) loadExistingMappingForOp(currentOp);
+    }
+
+    function loadExistingMappingForOp(opType) {
+      const match = operationMappings.find(m => normStr(m.operation_type) === normStr(opType));
+      const defs = match ? parseArrayField(match.defect_types || match.defect_type, []) : [];
+      const srcs = match ? parseArrayField(match.pdr_sources || match.pdr_source, []) : [];
+
+      document.querySelectorAll('.map-def-cb').forEach(cb => {
+        cb.checked = defs.some(d => normStr(d) === normStr(cb.value));
+      });
+      document.querySelectorAll('.map-src-cb').forEach(cb => {
+        cb.checked = srcs.some(s => normStr(s) === normStr(cb.value));
+      });
+    }
+
+    async function loadOperationMappings() {
+      try {
+        const res = await fetch('/api/operation-mappings');
+        operationMappings = await res.json();
+        renderMappingsList();
+        const currentOp = document.getElementById('mapOpSelect')?.value;
+        if (currentOp) loadExistingMappingForOp(currentOp);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderMappingsList() {
+      const box = document.getElementById('cfgMappingsList');
+      if (!box) return;
+      box.innerHTML = operationMappings.map(m => {
+        const defs = parseArrayField(m.defect_types || m.defect_type, ['Non défini']);
+        const srcs = parseArrayField(m.pdr_sources || m.pdr_source, ['0']);
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-inner); padding:8px 12px; border-radius:6px; margin-bottom:6px; font-size:0.83rem;">
+            <div>
+              <b style="color:var(--accent-cyan); font-size:0.9rem;">${esc(m.operation_type)}</b> ➔ 
+              <span style="color:var(--accent-amber); font-weight:700;">Pannes: [${esc(defs.join(' , '))}]</span> | 
+              <span style="color:var(--accent-green); font-weight:800;">PDR: [${esc(srcs.join(' , '))}]</span>
+            </div>
+            <button class="btn btn-danger" style="padding:2px 8px; font-size:0.75rem;" onclick="deleteMapping(${esc(m.id)})">✕</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleNewMappingSubmit(e) {
+      e.preventDefault();
+      const op = document.getElementById('mapOpSelect').value;
+      const defs = Array.from(document.querySelectorAll('.map-def-cb:checked')).map(cb => cb.value);
+      const srcs = Array.from(document.querySelectorAll('.map-src-cb:checked')).map(cb => cb.value);
+
+      if (defs.length === 0 || srcs.length === 0) {
+        alert('Veuillez cocher au moins un type de panne et une source PDR.');
+        return;
+      }
+
+      const res = await fetch('/api/operation-mappings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ operation_type: op, defect_types: defs, pdr_sources: srcs })
+      });
+      if (res.ok) {
+        await loadOperationMappings();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erreur lors de la liaison');
+      }
+    }
+
+    async function deleteMapping(id) {
+      if (!confirm('Supprimer cette liaison ?')) return;
+      await fetch(`/api/operation-mappings/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      await loadOperationMappings();
+    }
+
+    function onOperationTypeChange(opType) {
+      const defectSel = document.getElementById('fDefectType');
+      const pdrSourceSel = document.getElementById('fPdrSource');
+      if (!opType || !defectSel || !pdrSourceSel) return;
+
+      const clean = normStr(opType);
+      let matchedDefects = [];
+      let matchedPdrs = [];
+
+      if (Array.isArray(operationMappings) && operationMappings.length > 0) {
+        const found = operationMappings.find(m => normStr(m.operation_type) === clean);
+        if (found) {
+          matchedDefects = parseArrayField(found.defect_types || found.defect_type, []);
+          matchedPdrs = parseArrayField(found.pdr_sources || found.pdr_source, []);
+        }
+      }
+
+      if (matchedDefects.length === 0) {
+        const defaultRules = {
+          'changement': { defects: ['Casse', 'Endommagé'], pdrs: ['Magasin BB', 'Chariot', 'Magasin Central'] },
+          'reparation': { defects: ['Endommagé', 'Dégradation'], pdrs: ['Chariot', '0'] },
+          'reglage': { defects: ['Orientation'], pdrs: ['0'] },
+          'serrage': { defects: ['Resserrage'], pdrs: ['0'] },
+          'montage': { defects: ['Manque'], pdrs: ['Magasin BB', 'Chariot'] },
+          'esthetique': { defects: ['Dégradation'], pdrs: ['0'] },
+          'corrective': { defects: ['Remise en état', 'Endommagé'], pdrs: ['Chariot', 'Magasin BB', '0'] },
+          'simulation': { defects: ['Vérif.Conformité'], pdrs: ['0'] },
+          'ajout de panneau': { defects: ['Demande PPR'], pdrs: ['0'] }
+        };
+        const rule = defaultRules[clean] || { defects: ['Casse'], pdrs: ['0'] };
+        matchedDefects = rule.defects;
+        matchedPdrs = rule.pdrs;
+      }
+
+      defectSel.innerHTML = matchedDefects.map(d => `<option value="${esc(d)}">${esc(d)}</option>`).join('');
+      pdrSourceSel.innerHTML = matchedPdrs.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+      onPdrSourceChange(pdrSourceSel.value);
+    }
+
+    function onPdrSourceChange(srcVal) {
+      const qtyInput = document.getElementById('fPartQty');
+      if (qtyInput) {
+        qtyInput.value = (srcVal && srcVal !== '0') ? '1' : '0';
+      }
+    }
+
+    // === خريطة الألواح التفاعلية + البحث + إدارة الألواح في الإعدادات ===
+    async function loadPanels() {
+      const res = await fetch('/api/panels');
+      panels = await res.json();
+      populateMachineDropdowns();
+      renderPanelsMap();
+      renderConfigPanelsList();
+
+      const select = document.getElementById('moveSelectPanel');
+      if (select) {
+        select.innerHTML = panels.map(p => `<option value="${esc(p.id)}">${esc(p.panel_name)} (Zone actuelle : ${esc(p.current_zone)})</option>`).join('');
+      }
+    }
+
+    function toggleZoneAccordion(zoneName) {
+      if (openZonesSet.has(zoneName)) {
+        openZonesSet.delete(zoneName);
+      } else {
+        openZonesSet.add(zoneName);
+      }
+      renderPanelsMap();
+    }
+
+    function renderPanelsMap() {
+      const container = document.getElementById('zonePanelsGrid');
+      if (!container) return;
+
+      const q = (document.getElementById('panelSearchInput')?.value || '').toLowerCase().trim();
+      const configuredZones = config.options.filter(o => o.category === 'zone').map(o => o.option_value);
+      const panelZones = panels.map(p => p.current_zone);
+      const zones = [...new Set([...configuredZones, ...panelZones])];
+
+      container.innerHTML = '';
+
+      zones.forEach(z => {
+        const allInZone = panels.filter(p => p.current_zone === z);
+        const filteredInZone = q === '' 
+          ? allInZone 
+          : allInZone.filter(p => (p.panel_name + ' ' + p.panel_number + ' ' + p.current_zone).toLowerCase().includes(q));
+
+        if (q !== '' && filteredInZone.length === 0) return;
+
+        const isOpen = (q !== '') || openZonesSet.has(z);
+        const safeZone = z.replace(/'/g, "\\'");
+
+        const chipsHtml = filteredInZone.length > 0
+          ? filteredInZone.map(p => `<div class="panel-badge">${esc(p.panel_name)}${p.panel_number && p.panel_number !== '-' ? ` • N° <span>${esc(p.panel_number)}</span>` : ''}</div>`).join('')
+          : '<span style="font-size:0.8rem; color:var(--text-muted);">Aucun panneau dans cette zone</span>';
+
+        container.innerHTML += `
+          <div class="zone-accordion">
+            <div class="zone-accordion-header" data-zone="${esc(z)}" onclick="toggleZoneAccordion(this.dataset.zone)">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="color:var(--accent-cyan); font-size:0.9rem;">${isOpen ? '▼' : '▶'}</span>
+                <span style="font-weight:800; font-size:1rem;">📍 Zone : ${esc(z)}</span>
+              </div>
+              <span class="panel-badge" style="color:var(--accent-amber);">${filteredInZone.length} Panneau(x)</span>
+            </div>
+            <div class="zone-accordion-body ${isOpen ? 'open' : ''}">
+              <div class="panel-chips">${chipsHtml}</div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function renderConfigPanelsList() {
+      const box = document.getElementById('cfgPanelsList');
+      if (!box) return;
+      const q = (document.getElementById('cfgPanelSearch')?.value || '').toLowerCase().trim();
+
+      const filtered = q === ''
+        ? panels
+        : panels.filter(p => (p.panel_name + ' ' + p.current_zone + ' ' + p.panel_number).toLowerCase().includes(q));
+
+      box.innerHTML = filtered.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-inner); padding:8px 12px; border-radius:6px; border:1px solid var(--border-color);">
+          <div>
+            <b style="color:#FFF;">${esc(p.panel_name)}</b>
+            <div style="font-size:0.75rem; color:var(--text-muted);">Zone: <b style="color:var(--accent-cyan);">${esc(p.current_zone)}</b> | N°: ${esc(p.panel_number || '-')}</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn" style="padding:3px 8px; font-size:0.75rem;" onclick="openEditPanelModal(${esc(p.id)})">✏️</button>
+            <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="deletePanelItem(${esc(p.id)})">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function handleAddPanelSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('newPanelName').value;
+      const num = document.getElementById('newPanelNumber').value || '-';
+      const zone = document.getElementById('newPanelZone').value;
+
+      const res = await fetch('/api/panels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ panel_name: name, panel_number: num, current_zone: zone })
+      });
+      if (res.ok) {
+        document.getElementById('newPanelName').value = '';
+        document.getElementById('newPanelNumber').value = '';
+        await loadPanels();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erreur');
+      }
+    }
+
+    function openEditPanelModal(id) {
+      const p = panels.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('editPanelId').value = p.id;
+      document.getElementById('editPanelName').value = p.panel_name;
+      document.getElementById('editPanelNumber').value = p.panel_number || '-';
+      document.getElementById('editPanelZone').value = p.current_zone;
+      openModal('editPanelModal');
+    }
+
+    async function handleEditPanelSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('editPanelId').value;
+      const res = await fetch(`/api/panels/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          panel_name: document.getElementById('editPanelName').value,
+          panel_number: document.getElementById('editPanelNumber').value,
+          current_zone: document.getElementById('editPanelZone').value
+        })
+      });
+      if (res.ok) {
+        closeModal('editPanelModal');
+        await loadPanels();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erreur');
+      }
+    }
+
+    async function deletePanelItem(id) {
+      if (!confirm('Supprimer définitivement ce panneau de la liste ?')) return;
+      await fetch(`/api/panels/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      await loadPanels();
+    }
+
+    // === إدارة المستخدمين ===
+    async function loadUsers() {
+      const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      usersList = await res.json();
+      loadAudit();
+      renderUsersList();
+    }
+
+    function renderUsersList() {
+      const container = document.getElementById('usersCardsContainer');
+      if (!container) return;
+      const q = (document.getElementById('userSearchInput')?.value || '').toLowerCase().trim();
+
+      const filtered = q === '' 
+        ? usersList 
+        : usersList.filter(u => 
+            (u.full_name || '').toLowerCase().includes(q) || 
+            (u.matricule || '').toLowerCase().includes(q) ||
+            (u.username || '').toLowerCase().includes(q)
+          );
+
+      const isSupervisor = currentUser && (currentUser.role === 'admin' || currentUser.role === 'supervisor');
+
+      container.innerHTML = filtered.map(u => `
+        <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <h3>${esc(u.full_name)}</h3>
+              <span class="panel-badge" style="color:var(--accent-cyan);">${esc(u.role)}</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;">
+              Matricule : <b style="color:var(--accent-amber);">${esc(u.matricule)}</b> | User : <b style="color:#FFF;">${esc(u.username)}</b>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:6px; margin-top:14px; border-top:1px solid var(--border-color); padding-top:10px; justify-content:flex-end; flex-wrap:wrap;">
+            <button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;" data-mat="${esc(u.matricule)}" onclick="resetUserAccount(${esc(u.id)}, this.dataset.mat)" title="Réinitialiser user et mot de passe à son matricule">🔄 Réinitialiser</button>
+            ${isSupervisor ? `
+              <button class="btn" style="padding:4px 8px; font-size:0.75rem; background:var(--sebn-blue);" onclick="openEditUserModal(${esc(u.id)})">✏️ Modifier</button>
+              <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="deleteUser(${esc(u.id)})">✕</button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function resetUserAccount(id, matricule) {
+      if (!confirm(`Réinitialiser le compte de cet utilisateur ?\nL'identifiant redeviendra le matricule (${matricule}) et un mot de passe temporaire sera généré.`)) return;
+      const res = await fetch(`/api/users/${id}/reset`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const r = await res.json();
+        prompt('✓ Compte réinitialisé. Communiquez ce mot de passe temporaire (changement obligatoire à la connexion) :', r.temp_password);
+        loadUsers();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erreur lors de la réinitialisation');
+      }
+    }
+
+    function openEditUserModal(id) {
+      const u = usersList.find(x => x.id === id);
+      if (!u) return;
+
+      document.getElementById('editUserId').value = u.id;
+      document.getElementById('editUserUsername').value = u.username;
+      document.getElementById('editUserPassword').value = '';
+      document.getElementById('editUserMatricule').value = u.matricule;
+      document.getElementById('editUserFullName').value = u.full_name;
+      document.getElementById('editUserRole').value = u.role;
+
+      openModal('editUserModal');
+    }
+
+    async function handleEditUserSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('editUserId').value;
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          username: document.getElementById('editUserUsername').value,
+          password: document.getElementById('editUserPassword').value,
+          matricule: document.getElementById('editUserMatricule').value,
+          full_name: document.getElementById('editUserFullName').value,
+          role: document.getElementById('editUserRole').value
+        })
+      });
+
+      if (res.ok) {
+        closeModal('editUserModal');
+        loadUsers();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erreur lors de la modification');
+      }
+    }
+
+    async function handleAddUserSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          username: document.getElementById('uUsername').value,
+          password: document.getElementById('uPassword').value,
+          matricule: document.getElementById('uMatricule').value,
+          role: document.getElementById('uRole').value,
+          full_name: document.getElementById('uFullName').value
+        })
+      });
+      if (res.ok) {
+        closeModal('addUserModal');
+        document.getElementById('uUsername').value = '';
+        document.getElementById('uPassword').value = '';
+        document.getElementById('uMatricule').value = '';
+        document.getElementById('uFullName').value = '';
+        loadUsers();
+      } else {
+        const err = await res.json();
+        alert('Erreur: ' + (err.error || 'Impossible de créer l\'utilisateur'));
+      }
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Supprimer cet utilisateur ?')) return;
+      await fetch(`/api/users/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      loadUsers();
+    }
+
+    function openProfileModal() {
+      if (!currentUser) return;
+      document.getElementById('pUsername').value = currentUser.username || '';
+      document.getElementById('pPassword').value = '';
+      openModal('profileModal');
+    }
+
+    async function handleProfileUpdateSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          username: document.getElementById('pUsername').value,
+          password: document.getElementById('pPassword').value
+        })
+      });
+
+      if (res.ok) {
+        alert('✓ Identifiants mis à jour avec succès ! Veuillez vous reconnecter.');
+        closeModal('profileModal');
+        setTimeout(logout, 1500);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Erreur');
+      }
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('lUser').value,
+          password: document.getElementById('lPass').value
+        })
+      });
+      const d = await res.json();
+      if (res.ok) { sessionStorage.setItem('sebn_token', d.token); location.reload(); }
+      else { alert(d.error || 'Connexion impossible'); }
+    }
+
+    // تسجيل الخروج مع تحديث تلقائي للصفحة (Actualisé)
+    function logout() {
+      currentUser = null;
+      token = null;
+      sessionStorage.removeItem('sebn_token');
+      clearInterval(watchdog);
+      window.location.reload();
+    }
+
+    function updateUIState() {
+      const area = document.getElementById('userProfileArea');
+      const btnOp = document.getElementById('btnNewOp');
+      const btnTask = document.getElementById('btnNewTask');
+      const btnMove = document.getElementById('btnMovePanel');
+      const hoBtn = document.getElementById('hoSubmitBtn');
+      const wd = document.getElementById('watchdogBox');
+
+      if (currentUser) {
+        area.innerHTML = `
+          <button class="btn btn-secondary" onclick="openProfileModal()" style="font-size:0.8rem; padding:5px 10px;">👤 Mon Compte</button>
+          <span style="font-size:0.85rem; font-weight:700;">${esc(currentUser.full_name)} (${esc(currentUser.matricule)})</span>
+          <button class="btn btn-danger" onclick="logout()">Déconnexion</button>
+        `;
+        btnOp.style.display = 'inline-block';
+        btnMove.style.display = 'inline-block';
+        hoBtn.disabled = false;
+        wd.style.display = 'inline-block';
+        resetWatchdog();
+
+        if (currentUser.role === 'admin' || currentUser.role === 'supervisor') {
+          btnTask.style.display = 'inline-block';
+          document.getElementById('adminDeckBtn').style.display = 'inline-block';
+          document.getElementById('adminUsersBtn').style.display = 'inline-block';
+          document.getElementById('adminCatalogBtn').style.display = 'inline-block';
+          document.getElementById('adminConfigBtn').style.display = 'inline-block';
+        } else if (currentUser.role === 'team_leader') {
+          btnTask.style.display = 'inline-block';
+          document.getElementById('adminDeckBtn').style.display = 'inline-block';
+          document.getElementById('adminUsersBtn').style.display = 'inline-block';
+          document.getElementById('adminCatalogBtn').style.display = 'none';
+          document.getElementById('adminConfigBtn').style.display = 'none';
+        }
+      } else {
+        area.innerHTML = `<button class="btn" onclick="openModal('loginModal')">🔐 Connexion</button>`;
+        btnOp.style.display = 'none';
+        btnTask.style.display = 'none';
+        btnMove.style.display = 'none';
+        hoBtn.disabled = true;
+        wd.style.display = 'none';
+        document.getElementById('adminDeckBtn').style.display = 'none';
+        document.getElementById('adminUsersBtn').style.display = 'none';
+        document.getElementById('adminCatalogBtn').style.display = 'none';
+        document.getElementById('adminConfigBtn').style.display = 'none';
+      }
+    }
+
+    function switchTab(id) {
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      const activeView = document.getElementById(`view-${id}`);
+      if (activeView) activeView.classList.add('active');
+
+      const btns = Array.from(document.querySelectorAll('.nav-btn'));
+      const matched = btns.find(b => b.getAttribute('onclick')?.includes(id));
+      if (matched) matched.classList.add('active');
+
+      if (id === 'analytics') loadAnalyticsData();
+      if (id === 'users') loadUsers();
+      if (id === 'catalog') renderConfigPointsList();
+      if (id === 'config') { renderConfigLists(); renderMappingCheckboxes(); renderMappingsList(); renderConfigPanelsList(); }
+      if (id === 'panneaux') { loadPanels(); loadPanelMovements(); }
+      if (id === 'carts') loadCarts();
+    }
+
+    function openModal(id) { 
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active'); 
+    }
+    function closeModal(id) { 
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active'); 
+    }
+
+    function openNewOperationModal() {
+      document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('fPointName').value = '';
+      resetPointDetails();
+      
+      const opTypeSel = document.getElementById('fInterventionType');
+      if (opTypeSel) {
+        if (opTypeSel.options.length === 0) {
+          const ops = ['Changement', 'Réparation', 'Réglage', 'Sérrage', 'Montage', 'Esthétique', 'Corrective', 'Simulation', 'Ajout de panneau'];
+          opTypeSel.innerHTML = ops.map(o => `<option value="${o}">${o}</option>`).join('');
+        }
+        onOperationTypeChange(opTypeSel.value);
+      }
+      
+      openModal('opModal');
+    }
+
+    async function handleNewOpSubmit(e) {
+      e.preventDefault();
+      const pdrSourceVal = document.getElementById('fPdrSource').value.trim();
+      const defectTypeVal = document.getElementById('fDefectType').value.trim();
+      const qty = parseInt(document.getElementById('fPartQty').value, 10) || 0;
+
+      const res = await fetch('/api/operations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          operation_date: document.getElementById('fDate').value,
+          shift: document.getElementById('fShift').value,
+          zone: document.getElementById('fZone').value,
+          machine: document.getElementById('fMachine').value,
+          panel_name: document.getElementById('fMachine').value,
+          panel_number: document.getElementById('fPanelNumber').value,
+          point_name: document.getElementById('fPointName').value,
+          reference_code: document.getElementById('fRefCode').value,
+          point_type: document.getElementById('fPointType').value,
+          item_inspected: document.getElementById('fPieceType').value,
+          intervention_type: document.getElementById('fInterventionType').value,
+          defect_type: defectTypeVal,
+          spare_part_name: pdrSourceVal,
+          spare_parts_qty: qty,
+          unit_price_eur: document.getElementById('fUnitPrice').value,
+          repair_duration: document.getElementById('fRepairDuration').value,
+          downtime_duration: document.getElementById('fDowntimeDuration').value,
+          stops_machine: document.getElementById('fStopsMachine').checked,
+          observations: document.getElementById('fObservations').value
+        })
+      });
+      if (res.ok) { closeModal('opModal'); loadOperations(); }
+    }
+
+    async function deleteOperation(id) {
+      if (!confirm('Supprimer cette intervention ?')) return;
+      await fetch(`/api/operations/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      loadOperations();
+    }
+
+    async function handleHandoverSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/handovers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          shift_name: document.getElementById('hoShift').value,
+          outgoing_tech: document.getElementById('hoOutgoing').value,
+          summary: document.getElementById('hoSummary').value
+        })
+      });
+      if (res.ok) { alert('Passation validée avec succès !'); document.getElementById('hoSummary').value = ''; }
+    }
+
+    async function loadPointsCatalog() {
+      try {
+        const res = await fetch('/api/points');
+        pointsCatalog = await res.json();
+        const countBadge = document.getElementById('catalogTotalCount');
+        if (countBadge) countBadge.innerText = `${pointsCatalog.length} Point(s)`;
+      } catch (err) {
+        console.error("Erreur chargement catalogue:", err);
+      }
+    }
+
+    function onPointSearch(val) {
+      const trimmed = val.trim();
+      const lower = trimmed.toLowerCase();
+      const dl = document.getElementById('pointsDatalist');
+
+      const exactMatch = pointsCatalog.find(p => p.point_name.toLowerCase() === lower || p.reference_code.toLowerCase() === lower);
+      if (exactMatch) {
+        fillPointDetails(exactMatch);
+        dl.innerHTML = '';
+        return;
+      }
+
+      if (lower.length >= 2) {
+        const cleanInput = lower.replace(/[^a-z0-9]/g, '');
+        const matches = [];
+        for (let i = 0; i < pointsCatalog.length && matches.length < 20; i++) {
+          const p = pointsCatalog[i];
+          const pClean = p.point_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const rClean = p.reference_code.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (pClean.includes(cleanInput) || rClean.includes(cleanInput)) {
+            matches.push(`<option value="${esc(p.point_name)}">${esc(p.reference_code)} • ${esc(p.family)}</option>`);
+          }
+        }
+        dl.innerHTML = matches.join('');
+      } else {
+        dl.innerHTML = '';
+      }
+
+      if (trimmed === '') resetPointDetails();
+    }
+
+    function fillPointDetails(matched) {
+      document.getElementById('fRefCode').value = matched.reference_code;
+      document.getElementById('fPointType').value = matched.family;
+      document.getElementById('fUnitPrice').value = matched.unit_price || 0;
+
+      const imgBox = document.getElementById('pointImageDisplay');
+      if (matched.image_data) {
+        imgBox.innerHTML = `<img src="${esc(matched.image_data)}" alt="${esc(matched.point_name)}">`;
+      } else {
+        imgBox.innerHTML = `<span style="color:var(--text-muted); font-size:0.75rem; text-align:center;">Pas de photo (${esc(matched.reference_code)})</span>`;
+      }
+    }
+
+    function resetPointDetails() {
+      document.getElementById('fRefCode').value = '';
+      document.getElementById('fPointType').value = '';
+      document.getElementById('fUnitPrice').value = '0';
+      document.getElementById('pointImageDisplay').innerHTML = '<span style="color:var(--text-muted); font-size:0.75rem; text-align:center;">Photo automatique</span>';
+    }
+
+    async function rescanPhotosFolder() {
+      const res = await fetch('/api/points/rescan-photos', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const d = await res.json();
+      if (res.ok) {
+        alert(`🖼️ ${d.updated} photo(s) reliée(s) ! (${d.totalPhotos} photos au total dans le dossier)`);
+        await loadPointsCatalog();
+        renderConfigPointsList();
+      }
+    }
+
+    function previewConfigImage(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          uploadedPointBase64 = e.target.result;
+          document.getElementById('cfgImgPreviewContainer').innerText = '✓ Photo prête';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function previewEditImage(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          editUploadedBase64 = e.target.result;
+          document.getElementById('editImgStatus').innerText = '✓ Nouvelle photo prête';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    async function handleNewPointSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          point_name: document.getElementById('cfgPointName').value,
+          reference_code: document.getElementById('cfgPointRef').value,
+          family: document.getElementById('cfgPointFamily').value,
+          unit_price: document.getElementById('cfgPointPrice').value,
+          image_data: uploadedPointBase64
+        })
+      });
+      if (res.ok) {
+        document.getElementById('cfgPointName').value = '';
+        document.getElementById('cfgPointRef').value = '';
+        document.getElementById('cfgPointFamily').value = '';
+        document.getElementById('cfgPointPrice').value = '';
+        document.getElementById('cfgPointFile').value = '';
+        document.getElementById('cfgImgPreviewContainer').innerText = '';
+        uploadedPointBase64 = '';
+        await loadPointsCatalog();
+        renderConfigPointsList();
+        loadOperations();
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    }
+
+    function openEditPointModal(id) {
+      const item = pointsCatalog.find(p => p.id === id);
+      if (!item) return;
+
+      document.getElementById('editPointId').value = item.id;
+      document.getElementById('editPointRef').value = item.reference_code;
+      document.getElementById('editPointName').value = item.point_name;
+      document.getElementById('editPointFamily').value = item.family;
+      document.getElementById('editPointPrice').value = item.unit_price || 0;
+      document.getElementById('editPointFile').value = '';
+      document.getElementById('editImgStatus').innerText = item.image_data ? '✓ Photo existante' : '';
+      editUploadedBase64 = '';
+
+      openModal('editPointModal');
+    }
+
+    async function handleEditPointSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('editPointId').value;
+      const res = await fetch(`/api/points/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          point_name: document.getElementById('editPointName').value,
+          reference_code: document.getElementById('editPointRef').value,
+          family: document.getElementById('editPointFamily').value,
+          unit_price: document.getElementById('editPointPrice').value,
+          image_data: editUploadedBase64
+        })
+      });
+
+      if (res.ok) {
+        closeModal('editPointModal');
+        await loadPointsCatalog();
+        renderConfigPointsList();
+        loadOperations();
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    }
+
+    function renderConfigPointsList() {
+      const box = document.getElementById('pointsCatalogList');
+      if (!box) return;
+      const q = (document.getElementById('catalogSearchInput')?.value || '').toLowerCase().trim();
+
+      const filtered = q === '' 
+        ? pointsCatalog.slice(0, 50) 
+        : pointsCatalog.filter(pt => 
+            (pt.point_name + ' ' + pt.reference_code + ' ' + pt.family).toLowerCase().includes(q)
+          ).slice(0, 50);
+
+      box.innerHTML = filtered.map(pt => `
+        <div style="background:var(--card-bg); border:1px solid var(--border-color); border-radius:8px; padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div style="height:110px; display:flex; justify-content:center; align-items:center; background:#080E1A; border-radius:6px; overflow:hidden; margin-bottom:10px;">
+            ${pt.image_data ? `<img src="${esc(pt.image_data)}" loading="lazy" style="max-height:100%; max-width:100%; object-fit:contain;">` : '<span style="color:var(--text-muted); font-size:0.75rem;">Pas de photo</span>'}
+          </div>
+          <div>
+            <div style="font-size:0.82rem; color:var(--accent-amber); font-weight:700;">${esc(pt.reference_code)}</div>
+            <div style="font-weight:800; color:var(--accent-cyan); font-size:0.95rem; margin-top:2px;">${esc(pt.point_name)}</div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">Catégorie : <b style="color:#FFF;">${esc(pt.family)}</b></div>
+            <div style="font-size:0.78rem; color:var(--accent-green); font-weight:700; margin-top:2px;">Prix : ${(pt.unit_price || 0).toFixed(2)} €</div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; border-top:1px solid var(--border-color); padding-top:8px;">
+            <button class="btn" style="padding:3px 10px; font-size:0.75rem; background:var(--sebn-blue);" onclick="openEditPointModal(${esc(pt.id)})">✏️ Modifier</button>
+            <button class="btn btn-danger" style="padding:3px 10px; font-size:0.75rem;" onclick="deletePoint(${esc(pt.id)})">Suppr</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function deletePoint(id) {
+      if (!confirm('Supprimer ce point du catalogue ?')) return;
+      await fetch(`/api/points/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      await loadPointsCatalog();
+      renderConfigPointsList();
+    }
+
+    function renderConfigLists() {
+      const fillList = (cat, containerId) => {
+        const box = document.getElementById(containerId);
+        if (!box) return;
+        box.innerHTML = '';
+        config.options.filter(o => o.category === cat).forEach(item => {
+          box.innerHTML += `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-inner); padding:6px 10px; border-radius:6px; margin-bottom:6px;">
+              <span>${esc(item.option_value)}</span>
+              <button class="btn btn-danger" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteConfigOption(${esc(item.id)})">✕</button>
+            </div>
+          `;
+        });
+      };
+      fillList('zone', 'cfgZonesList');
+      fillList('machine', 'cfgMachinesList');
+      fillList('pdr_source', 'cfgSourcesList');
+      fillList('piece_type', 'cfgPieceTypesList');
+      fillList('operation_type', 'cfgOpTypesList');
+      fillList('defect_type', 'cfgDefectsList');
+    }
+
+    async function addNewOption(category, inputId) {
+      const val = document.getElementById(inputId).value;
+      if (!val) return;
+      const res = await fetch('/api/config/options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ category, option_value: val })
+      });
+      if (res.ok) {
+        document.getElementById(inputId).value = '';
+        await loadConfig();
+        renderConfigLists();
+      }
+    }
+
+    async function deleteConfigOption(id) {
+      if (!confirm('Supprimer cet élément ?')) return;
+      await fetch(`/api/config/options/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+      await loadConfig();
+      renderConfigLists();
+    }
+
+    async function loadOperations() {
+      const res = await fetch('/api/operations');
+      operations = await res.json();
+      filterOperations(true);
+    }
+
+    function renderOperations(data) {
+      const tb = document.getElementById('operationsTableBody');
+      if (!data.length) { tb.innerHTML = '<tr class="empty-row"><td colspan="16">Aucune intervention à afficher.</td></tr>'; return; }
+      tb.innerHTML = data.slice(0, opLimit).map(o => {
+        const canDelete = currentUser && (currentUser.role === 'admin' || currentUser.role === 'supervisor' || currentUser.id === o.technician_id);
+        const cleanDate = o.operation_date ? o.operation_date.replace('T', ' ').split(' ')[0] : '-';
+        
+        const pdrDisplay = (o.spare_part_name && o.spare_part_name !== '0') 
+          ? `<b style="color:var(--accent-green);">${esc(o.spare_part_name)}</b>` 
+          : '<span style="color:var(--text-muted);">0</span>';
+
+        return `
+          <tr>
+            <td>${esc(cleanDate)}</td>
+            <td><b>${esc(o.matricule)}</b></td>
+            <td><span class="panel-badge">${esc(o.shift)}</span></td>
+            <td><span style="background:var(--card-inner); padding:2px 6px; border-radius:4px;">${esc(o.zone)}</span></td>
+            <td><b>${esc(o.panel_name)}</b></td>
+            <td>${esc(o.panel_number)}</td>
+            <td style="color:var(--accent-amber); font-weight:700;">${esc(o.reference_code)}</td>
+            <td style="color:var(--accent-cyan); font-weight:800;">${esc(o.point_name)}</td>
+            <td><span style="background:var(--card-inner); padding:2px 6px; border-radius:4px;">${esc(o.point_type)}</span></td>
+            <td><b>${esc(o.item_inspected || '-')}</b></td>
+            <td>${esc(o.intervention_type)}</td>
+            <td><span style="color:${o.defect_type === 'Casse' ? 'var(--sebn-red)' : '#FFF'}; font-weight:600;">${esc(o.defect_type)}</span></td>
+            <td>${pdrDisplay}</td>
+            <td>${esc(o.repair_duration)}</td>
+            <td style="color:${o.downtime_duration > 0 ? 'var(--sebn-red)' : 'inherit'}; font-weight:700;">${esc(o.downtime_duration)}</td>
+            <td>${canDelete ? `<button class="btn btn-danger" style="padding:2px 6px; font-size:0.75rem;" onclick="deleteOperation(${esc(o.id)})">Suppr</button>` : '-'}</td>
+          </tr>
+        `;
+      }).join('') + (data.length > opLimit ? `<tr class="empty-row"><td colspan="16"><button class="btn btn-secondary" onclick="opLimit += 200; filterOperations(true)">Afficher plus (${data.length - opLimit} restantes)</button></td></tr>` : '');
+    }
+
+    function filterOperations(keep) {
+      if (keep !== true) opLimit = 200;
+      const q = document.getElementById('opSearch').value.toLowerCase();
+      const z = document.getElementById('opZoneFilter').value;
+      const m = document.getElementById('opMachineFilter').value;
+      const filtered = operations.filter(o => {
+        const matchQ = (o.point_name + o.reference_code + (o.spare_part_name || '') + (o.item_inspected || '') + o.matricule).toLowerCase().includes(q);
+        const matchZ = !z || o.zone === z;
+        const matchM = !m || o.panel_name === m;
+        return matchQ && matchZ && matchM;
+      });
+      filteredOps = filtered;
+      renderOperations(filtered);
+    }
+
+    async function loadCarts() {
+      const res = await fetch('/api/carts');
+      const carts = await res.json();
+      const box = document.getElementById('cartsContainer');
+      box.innerHTML = carts.map(c => {
+        let items = c.items.map(i => `
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-inner); padding:8px; border-radius:6px; margin-top:6px;">
+            <div><b>${esc(i.item_name)}</b> <small>(${esc(i.reference_code)})</small><div style="color:var(--accent-green); font-weight:700;">Stock: ${esc(i.quantity)}</div></div>
+            ${currentUser ? `<div style="display:flex; gap:6px;">
+              <button class="btn btn-danger" style="padding:3px 8px; font-size:0.75rem;" onclick="moveCartItem(${esc(c.id)},${esc(i.id)}, 'take')">-</button>
+              <button class="btn btn-success" style="padding:3px 8px; font-size:0.75rem;" onclick="moveCartItem(${esc(c.id)},${esc(i.id)}, 'return')">+</button>
+            </div>` : ''}
+          </div>
+        `).join('');
+        return `<div class="card"><h3>${esc(c.cart_name)}</h3><span class="card-title">Zone : ${esc(c.zone_assigned)}</span><div style="margin-top:12px;">${items}</div></div>`;
+      }).join('');
+    }
+
+    async function moveCartItem(cartId, itemId, actionType) {
+      const qty = prompt(`Quantité à ${actionType === 'take' ? 'prélever' : 'restituer'} :`, '1');
+      if (!qty) return;
+      const res = await fetch('/api/cart-movements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ cart_id: cartId, item_id: itemId, action_type: actionType, quantity: parseInt(qty, 10) })
+      });
+      if (res.ok) { loadCarts(); } else { const err = await res.json(); alert(err.error); }
+    }
+
+    async function openCartMovements() {
+      openModal('cartMovementsModal');
+      const res = await fetch('/api/cart-movements');
+      const movs = await res.json();
+      const tb = document.getElementById('cartMovementsTbody');
+      tb.innerHTML = movs.map(m => `
+        <tr>
+          <td>${esc(m.created_at)}</td><td><b>${esc(m.technician_name)}</b></td><td>${esc(m.item_name)}</td>
+          <td><span style="color:${m.action_type === 'take' ? 'var(--sebn-red)' : 'var(--accent-green)'}; font-weight:700;">${m.action_type === 'take' ? 'RETRAIT' : 'RESTITUTION'}</span></td>
+          <td><b>${esc(m.quantity)}</b></td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadTasks() {
+      const res = await fetch('/api/tasks');
+      const tasks = await res.json();
+      const box = document.getElementById('tasksContainer');
+      box.innerHTML = tasks.map(t => `
+        <div class="card" style="border-left: 4px solid ${t.status === 'completed' ? 'var(--accent-green)' : 'var(--accent-amber)'};">
+          <h3>${esc(t.title)}</h3>
+          <span class="card-title">${esc(t.shift_name)} • Priorité : ${esc(t.priority)} • Zone : ${esc(t.target_zone)}</span>
+          <p style="margin-top:8px; font-size:0.85rem; color:var(--text-muted);">${esc(t.description)}</p>
+          ${currentUser && currentUser.role !== 'technician' ? `<button class="btn btn-secondary" style="margin-top:10px; padding:3px 10px; font-size:0.75rem;" onclick="toggleTask(${esc(t.id)}, '${t.status === 'completed' ? 'pending' : 'completed'}')">${t.status === 'completed' ? 'Rouvrir' : 'Marquer terminée'}</button>` : ''}
+        </div>
+      `).join('');
+    }
+
+    async function handleNewTaskSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          title: document.getElementById('tTitle').value,
+          description: document.getElementById('tDesc').value,
+          target_zone: document.getElementById('tZone').value,
+          shift_name: document.getElementById('tShift').value
+        })
+      });
+      if (res.ok) {
+        closeModal('newTaskModal');
+        document.getElementById('tTitle').value = '';
+        document.getElementById('tDesc').value = '';
+        loadTasks();
+      }
+    }
+
+    async function loadPanelMovements() {
+      const res = await fetch('/api/panel-movements');
+      const movs = await res.json();
+      const tb = document.getElementById('panelMovementsTableBody');
+      tb.innerHTML = movs.map(m => `
+        <tr>
+          <td>${esc(m.created_at)}</td><td><b>${esc(m.panel_name)}</b></td><td>${esc(m.panel_number)}</td><td><span class="panel-badge">${esc(m.from_zone)}</span></td>
+          <td><span class="panel-badge" style="color:var(--accent-green);">➔ ${esc(m.to_zone)}</span></td><td><b>${esc(m.operator_matricule)}</b></td><td>${esc(m.reason)}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function handlePanelTransferSubmit(e) {
+      e.preventDefault();
+      const res = await fetch('/api/panel-movements', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          panel_id: document.getElementById('moveSelectPanel').value,
+          to_zone: document.getElementById('moveTargetZone').value,
+          reason: document.getElementById('moveReason').value
+        })
+      });
+      if (res.ok) {
+        closeModal('movePanelModal');
+        loadPanels();
+        loadPanelMovements();
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    }
+
+    async function loadAnalyticsData() {
+      const hrs = document.getElementById('deckOperatingHours')?.value || 8;
+      const qs = new URLSearchParams({ operating_hours: hrs, from: document.getElementById('deckFrom').value, to: document.getElementById('deckTo').value });
+      const res = await fetch(`/api/analytics?${qs}`);
+      if (!res.ok) return;
+      const d = await res.json();
+
+      document.getElementById('sl1Interventions').innerText = d.kpis.totalInterventions;
+      document.getElementById('sl1PartsQty').innerText = d.kpis.totalSparePartsQty;
+      document.getElementById('sl1BrokenQty').innerText = d.kpis.casseQty;
+      document.getElementById('sl1DamagedQty').innerText = d.kpis.damagedQty;
+      document.getElementById('sl1TotalTime').innerText = d.kpis.totalRepairTime + ' min';
+      document.getElementById('sl1TotalCost').innerText = d.kpis.totalSparePartsCost + ' €';
+      document.getElementById('sl1CostCasse').innerText = d.kpis.casseCost + ' €';
+      document.getElementById('sl1CostDamaged').innerText = d.kpis.damagedCost + ' €';
+
+      document.getElementById('sl3CasseCost').innerText = d.kpis.casseCost + ' €';
+      document.getElementById('sl3ReplacementCost').innerText = (d.kpis.totalSparePartsCost - d.kpis.casseCost).toFixed(2) + ' €';
+      document.getElementById('sl3MachineStops').innerText = d.kpis.machineStops;
+
+      document.getElementById('sl7MTTR').innerText = d.kpis.mttr + ' min';
+      document.getElementById('sl7MTBF').innerText = d.kpis.mtbf + (d.kpis.mtbf !== 'N/A' ? ' h' : '');
+      document.getElementById('sl7Availability').innerText = d.kpis.availability + '%';
+
+      renderBars('sl2InterventionBars', d.interventions);
+      renderBars('sl4TopPartsBars', d.topParts);
+      renderBars('sl5ZoneTimes', Object.fromEntries(Object.entries(d.zones).map(([k, v]) => [k, v.time])));
+      renderBars('sl5ZoneParts', Object.fromEntries(Object.entries(d.zones).map(([k, v]) => [k, v.parts])));
+      renderBars('sl6DefectsPareto', d.defects);
+    }
+
+    function renderBars(containerId, obj) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      const vals = Object.values(obj);
+      const max = Math.max(...vals, 1);
+      box.innerHTML = Object.entries(obj).map(([k, v]) => {
+        const pct = ((v / max) * 100).toFixed(0);
+        return `
+          <div class="bar-row">
+            <span style="width:150px; font-weight:600;">${esc(k)}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%;"></div></div>
+            <span style="width:45px; text-align:right;">${v}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showSlide(num) {
+      document.querySelectorAll('.slide-page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.slide-chip').forEach(c => c.classList.remove('active'));
+      const slide = document.getElementById(`slide-${num}`);
+      if (slide) slide.classList.add('active');
+      const chips = document.querySelectorAll('.slide-chip');
+      if (chips[num - 1]) chips[num - 1].classList.add('active');
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
