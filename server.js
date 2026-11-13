@@ -263,7 +263,6 @@ const ensureAllTechnicians = () => {
 ensureAllTechnicians();
 
 const ensureDefaults = () => {
-  // 1. تحديث قائمة Type de pièce: حذف القديم وتثبيت الـ 66 عنصراً المطلوبة
   const newPieceTypes = [
     'Master', 'Slave A', 'Slave B', 'Slave', 'Carte communication', 'Power 12V',
     'Transformateur 12V', 'Power 24V', 'Transformateur 24V', 'Sensor, 60mm ground EH02.V160',
@@ -288,7 +287,6 @@ const ensureDefaults = () => {
     insertOpt.run('piece_type', item.trim());
   }
 
-  // 2. فئات الخيارات الأخرى
   const existingOpts = db.prepare("SELECT category, option_value FROM options_config").all();
   const hasOpt = (cat, val) => existingOpts.some(e => e.category === cat && e.option_value.toLowerCase() === val.toLowerCase());
 
@@ -341,7 +339,6 @@ const ensureDefaults = () => {
   }
 
   const allPanelsList = [
-    // TFL-01
     { name: 'Q7 LL 40', zone: 'TFL-01' }, { name: 'Q7 LL 44', zone: 'TFL-01' }, { name: 'Q7 LL 21', zone: 'TFL-01' },
     { name: 'Q7 RL 01', zone: 'TFL-01' }, { name: 'Q7 LL 24', zone: 'TFL-01' }, { name: 'Q7 LL 26', zone: 'TFL-01' },
     { name: 'Q7 LL 12', zone: 'TFL-01' }, { name: 'Q7 LL 38', zone: 'TFL-01' }, { name: 'Q7 LL 06', zone: 'TFL-01' },
@@ -349,7 +346,6 @@ const ensureDefaults = () => {
     { name: 'Q7 LL 19', zone: 'TFL-01' }, { name: 'Q7 LL 35', zone: 'TFL-01' }, { name: 'Q7 LL 09', zone: 'TFL-01' },
     { name: 'Q7 RL 02', zone: 'TFL-01' }, { name: 'Q7 LL 03', zone: 'TFL-01' }, { name: 'Q7 LL 43', zone: 'TFL-01' },
     { name: 'Q7 LL 42', zone: 'TFL-01' }, { name: 'Q9 AH RL 01', zone: 'TFL-01' },
-    // TFL-02
     { name: 'Q9 AH LL 05', zone: 'TFL-02' }, { name: 'Q9 AH LL 09', zone: 'TFL-02' }, { name: 'Q9 AH LL 01', zone: 'TFL-02' },
     { name: 'Q9 AH LL 10', zone: 'TFL-02' }, { name: 'Q9 AH LL 13', zone: 'TFL-02' }, { name: 'Q9 LL 03', zone: 'TFL-02' },
     { name: 'Q9 AH LL 07', zone: 'TFL-02' }, { name: 'Q9 AH LL 16', zone: 'TFL-02' }, { name: 'Q9 AH LL 06', zone: 'TFL-02' },
@@ -357,7 +353,6 @@ const ensureDefaults = () => {
     { name: 'Q9 AH LL 11', zone: 'TFL-02' }, { name: 'Q9 AH LL 14', zone: 'TFL-02' }, { name: 'Q7 LL 29', zone: 'TFL-02' },
     { name: 'Q9 AH LL 12', zone: 'TFL-02' }, { name: 'Q9 AH LL 02', zone: 'TFL-02' }, { name: 'Q9 AH LL 04', zone: 'TFL-02' },
     { name: 'Q9 AH LL 18', zone: 'TFL-02' }, { name: 'Q9 LL 01', zone: 'TFL-02' },
-    // TFL-03
     { name: 'Q7 LL 31', zone: 'TFL-03' }, { name: 'Q7 LL 28', zone: 'TFL-03' }, { name: 'Q7 LL 30', zone: 'TFL-03' },
     { name: 'Q7 LL 36', zone: 'TFL-03' }, { name: 'Q7 LL 32', zone: 'TFL-03' }, { name: 'Q7 LL 45', zone: 'TFL-03' },
     { name: 'Q7 LL 14', zone: 'TFL-03' }, { name: 'Q7 LL 05', zone: 'TFL-03' }, { name: 'Q7 LL 13', zone: 'TFL-03' },
@@ -365,7 +360,6 @@ const ensureDefaults = () => {
     { name: 'Q7 LL 04', zone: 'TFL-03' }, { name: 'Q7 LL 47', zone: 'TFL-03' }, { name: 'Q7 LL 39', zone: 'TFL-03' },
     { name: 'Q7 LL 46', zone: 'TFL-03' }, { name: 'Q7 LL 11', zone: 'TFL-03' }, { name: 'Q7 LL 16', zone: 'TFL-03' },
     { name: 'Q7 LL 20', zone: 'TFL-03' }, { name: 'Q7 LL 33', zone: 'TFL-03' },
-    // TFL-04
     { name: 'Q7 LL 48', zone: 'TFL-04' }, { name: 'Q9 LL 02', zone: 'TFL-04' }, { name: 'Q9 LL 05', zone: 'TFL-04' },
     { name: 'Q7 LL 01', zone: 'TFL-04' }, { name: 'Q7 LL 53', zone: 'TFL-04' }, { name: 'Q7 LL 23', zone: 'TFL-04' },
     { name: 'Q7 LL 10 Kaizen', zone: 'TFL-04' }, { name: 'AH LL 15', zone: 'TFL-04' }, { name: 'Q7 LL 60', zone: 'TFL-04' },
@@ -373,15 +367,12 @@ const ensureDefaults = () => {
     { name: 'Q7 LL 57', zone: 'TFL-04' }, { name: 'Q7 LL 49', zone: 'TFL-04' }, { name: 'Q7 LL 37', zone: 'TFL-04' },
     { name: 'Q7 LL 41', zone: 'TFL-04' }, { name: 'Q7 LL 55', zone: 'TFL-04' }, { name: 'Q7 LL 54', zone: 'TFL-04' },
     { name: 'Q7 LL 51', zone: 'TFL-04' },
-    // MTT
     { name: 'MTT 01 Q9', zone: 'MTT' }, { name: 'MTT 02 Q7', zone: 'MTT' }, { name: 'MTT 03 Q7 RL/LL', zone: 'MTT' },
     { name: 'MTT 04', zone: 'MTT' }, { name: 'MTT 02', zone: 'MTT' },
-    // Rework
     { name: 'Q7 LL 03 rework', zone: 'Rework' }, { name: 'Q7 LL 02 rework', zone: 'Rework' },
     { name: 'Q9AH RL N01 rework', zone: 'Rework' }, { name: 'Q9 RL 01 rework', zone: 'Rework' },
     { name: 'Q7 RL 01 rework', zone: 'Rework' }, { name: 'Q9AH LL 01 rework', zone: 'Rework' },
     { name: 'Q9 LL 01 rework', zone: 'Rework' }, { name: 'Q7 LL 01 rework', zone: 'Rework' },
-    // Backup
     { name: 'Q7 LL 04 P.M Rework', zone: 'Backup' }, { name: 'Q9 AH RL 03', zone: 'Backup' },
     { name: 'Q7 LL 02', zone: 'Backup' }, { name: 'Q9 RL 01', zone: 'Backup' }, { name: 'Q7 RL 04', zone: 'Backup' },
     { name: 'Q7 LL 17', zone: 'Backup' }, { name: 'Q7 LL 34', zone: 'Backup' }, { name: 'Q7 LL 56', zone: 'Backup' },
@@ -407,7 +398,6 @@ const ensureDefaults = () => {
   }
 
   db.exec('COMMIT;');
-  console.log(`✅ [Type de pièce] 66 éléments synchronisés avec succès.`);
 };
 ensureDefaults();
 
@@ -428,9 +418,7 @@ function indexPhotos() {
         }
       }
     }
-  } catch (e) {
-    console.error('Erreur indexation photos:', e.message);
-  }
+  } catch (e) {}
 }
 indexPhotos();
 
@@ -488,11 +476,9 @@ if (currentPointsCount === 0) {
         }
       }
 
-      let inserted = 0;
-      let linkedPhotos = 0;
-      const usedKeys = new Set();
-      const seenPoints = new Set();
-      const catalogBackup = [];
+      let usedKeys = new Set();
+      let seenPoints = new Set();
+      let catalogBackup = [];
 
       db.exec('BEGIN TRANSACTION;');
       for (const r of dataMatch) {
@@ -511,44 +497,18 @@ if (currentPointsCount === 0) {
         const family = pData ? pData.family : 'Non défini';
         const price = pData ? pData.price : 0;
         const photo = getPhoto(pName, rCode);
-        if (photo) linkedPhotos++;
 
         insertPt.run(pName, rCode, family, price, photo);
         catalogBackup.push({ point_name: pName, reference_code: rCode, family, unit_price: price });
-        inserted++;
-      }
-
-      for (const [norm, pData] of Object.entries(prixDict)) {
-        const upperR = pData.rawRef.toUpperCase();
-        if (!usedKeys.has(norm) && !seenPoints.has(upperR)) {
-          const photo = getPhoto(pData.rawRef, pData.rawRef);
-          if (photo) linkedPhotos++;
-          insertPt.run(pData.rawRef, pData.rawRef, pData.family, pData.price, photo);
-          catalogBackup.push({ point_name: pData.rawRef, reference_code: pData.rawRef, family: pData.family, unit_price: pData.price });
-          seenPoints.add(upperR);
-          inserted++;
-        }
       }
       db.exec('COMMIT;');
-
       fs.writeFileSync(catalogJsonPath, JSON.stringify(catalogBackup, null, 2), 'utf8');
-    } catch (e) {
-      console.error('Erreur import Excel:', e.message);
-    }
+    } catch (e) {}
   }
 }
 
 const OPTION_CATEGORIES = ['zone', 'machine', 'pdr_source', 'piece_type', 'operation_type', 'defect_type'];
 const ROLES = ['technician', 'team_leader', 'supervisor', 'admin'];
-const IMG_RE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
-const safeImage = v => (typeof v === 'string' && ((v.length < 2.5e6 && IMG_RE.test(v)) || /^\/photos\/[\w.\- ]+$/.test(v)) ? v : '');
-
-function passwordError(pw, u) {
-  if (pw.length < 8) return 'Mot de passe : 8 caractères minimum';
-  if (!/[A-Za-z]/.test(pw) || !/\d/.test(pw)) return 'Mot de passe : au moins une lettre et un chiffre';
-  if ([u.matricule, u.username, 'admin123'].some(v => v && String(v).toLowerCase() === pw.toLowerCase())) return 'Mot de passe trop prévisible';
-  return null;
-}
 
 function auth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -558,62 +518,23 @@ function auth(req, res, next) {
     const user = db.prepare('SELECT id, username, role, matricule, full_name, must_change_password FROM users WHERE id = ?').get(payload.id);
     if (!user) return res.status(401).json({ error: 'Compte introuvable' });
     req.user = user;
-    const p = req.originalUrl.split('?')[0];
-    if (user.must_change_password && !(p === '/api/me' || (req.method === 'PUT' && p === '/api/user/profile'))) {
-      return res.status(403).json({ error: 'Changement de mot de passe obligatoire', code: 'PASSWORD_CHANGE_REQUIRED' });
-    }
     next();
   } catch (err) {
     res.status(401).json({ error: 'Session expirée' });
   }
 }
 
-function supervisorOnly(req, res, next) {
-  if (req.user?.role !== 'admin' && req.user?.role !== 'supervisor') {
-    return res.status(403).json({ error: 'Accès réservé au Superviseur / Admin' });
-  }
-  next();
-}
-
-function leaderOrSupervisor(req, res, next) {
-  if (req.user?.role !== 'admin' && req.user?.role !== 'supervisor' && req.user?.role !== 'team_leader') {
-    return res.status(403).json({ error: 'Accès réservé au Chef d\'équipe ou Superviseur' });
-  }
-  next();
-}
-
-if (process.env.TRUST_PROXY) app.set('trust proxy', 1);
-// Toute l'API exige une session, sauf la connexion
 app.use('/api', (req, res, next) => (req.path === '/login' ? next() : auth(req, res, next)));
-
-const loginFails = new Map();
-const DUMMY_HASH = bcrypt.hashSync('dummy-password', 10);
-const isLocked = k => { const r = loginFails.get(k); if (r && r.until > Date.now()) return true; if (r && r.until) loginFails.delete(k); return false; };
-const bumpFail = (k, max) => { const n = (loginFails.get(k)?.n || 0) + 1; loginFails.set(k, { n, until: n >= max ? Date.now() + 15 * 60 * 1000 : 0 }); };
-setInterval(() => loginFails.clear(), 60 * 60 * 1000).unref();
 
 app.post('/api/login', (req, res) => {
   const username = String(req.body?.username || '').trim();
   const password = String(req.body?.password || '');
   if (!username || !password) return res.status(400).json({ error: 'Identifiants obligatoires' });
 
-  const kUser = `u|${req.ip}|${username.toLowerCase()}`, kIp = `ip|${req.ip}`;
-  if (isLocked(kUser) || isLocked(kIp)) return res.status(429).json({ error: 'Trop de tentatives. Réessayez dans 15 minutes.' });
-
   const user = db.prepare('SELECT * FROM users WHERE username = ? OR matricule = ?').get(username, username);
-  const valid = bcrypt.compareSync(password, user ? user.password : DUMMY_HASH) && !!user;
-  if (!valid) {
-    bumpFail(kUser, 5); bumpFail(kIp, 30);
-    audit({ ip: req.ip }, 'LOGIN_FAILED', username);
-    return res.status(401).json({ error: 'Identifiants incorrects' });
-  }
-  loginFails.delete(kUser);
+  const valid = bcrypt.compareSync(password, user ? user.password : '') && !!user;
+  if (!valid) return res.status(401).json({ error: 'Identifiants incorrects' });
 
-  if (!user.must_change_password && (password === user.matricule || password === 'admin123')) {
-    db.prepare('UPDATE users SET must_change_password = 1 WHERE id = ?').run(user.id);
-    user.must_change_password = 1;
-  }
-  audit({ user, ip: req.ip }, 'LOGIN');
   const token = jwt.sign({ id: user.id }, JWT_SECRET, { algorithm: 'HS256', expiresIn: '8h' });
   res.json({ token, must_change_password: !!user.must_change_password });
 });
@@ -623,243 +544,12 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ id, username, role, matricule, full_name, must_change_password: !!must_change_password });
 });
 
-app.put('/api/user/profile', auth, (req, res) => {
-  const username = String(req.body?.username || '').trim();
-  const password = String(req.body?.password || '').trim();
-  const me = req.user;
-  if (!username || username.length > 40) return res.status(400).json({ error: 'Identifiant obligatoire (40 caractères max)' });
-  if (me.must_change_password && !password) return res.status(400).json({ error: 'Choisissez un nouveau mot de passe' });
-  if (db.prepare('SELECT 1 FROM users WHERE (username = ? OR matricule = ?) AND id != ?').get(username, username, me.id)) {
-    return res.status(400).json({ error: 'Cet identifiant est déjà utilisé' });
-  }
-  if (password) {
-    const err = passwordError(password, { matricule: me.matricule, username });
-    if (err) return res.status(400).json({ error: err });
-    db.prepare('UPDATE users SET username = ?, password = ?, must_change_password = 0 WHERE id = ?').run(username, bcrypt.hashSync(password, 12), me.id);
-  } else {
-    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, me.id);
-  }
-  audit(req, 'PROFILE_UPDATE', username);
-  res.json({ success: true });
-});
-
-app.post('/api/users/:id/reset', auth, leaderOrSupervisor, (req, res) => {
-  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
-  if (!target) return res.status(404).json({ error: 'Utilisateur introuvable' });
-  if (req.user.role === 'team_leader' && target.role !== 'technician') {
-    return res.status(403).json({ error: "Un chef d'équipe ne peut réinitialiser que des techniciens" });
-  }
-  const temp = crypto.randomBytes(6).toString('base64url');
-  db.prepare('UPDATE users SET username = ?, password = ?, must_change_password = 1 WHERE id = ?').run(target.matricule, bcrypt.hashSync(temp, 12), target.id);
-  audit(req, 'USER_RESET', target.matricule);
-  res.json({ success: true, matricule: target.matricule, temp_password: temp });
-});
-
-app.get('/api/users', auth, leaderOrSupervisor, (req, res) => {
-  res.json(db.prepare('SELECT id, username, role, matricule, full_name FROM users ORDER BY full_name ASC').all());
-});
-
-function readUserBody(b = {}) {
-  const [username, matricule, full_name] = [b.username, b.matricule, b.full_name].map(v => String(v || '').trim());
-  return { username, matricule, full_name, password: String(b.password || '').trim(), role: b.role };
-}
-function userFieldError(u, caller) {
-  if (!u.username || !u.matricule || !u.full_name || !u.role) return 'Champs obligatoires manquants';
-  if (!ROLES.includes(u.role) || (u.role === 'admin' && caller.role !== 'admin')) return 'Rôle invalide';
-  if (u.username.length > 40 || u.matricule.length > 20 || u.full_name.length > 80) return 'Valeur trop longue';
-  return null;
-}
-
-app.post('/api/users', auth, supervisorOnly, (req, res) => {
-  const u = readUserBody(req.body);
-  const err = userFieldError(u, req.user) || (!u.password ? 'Champs obligatoires manquants' : passwordError(u.password, u));
-  if (err) return res.status(400).json({ error: err });
-  if (db.prepare('SELECT 1 FROM users WHERE username IN (?, ?) OR matricule IN (?, ?)').get(u.username, u.matricule, u.username, u.matricule)) {
-    return res.status(400).json({ error: 'Identifiant ou Matricule déjà utilisé' });
-  }
-  db.prepare('INSERT INTO users (username, password, role, matricule, full_name, must_change_password) VALUES (?, ?, ?, ?, ?, 1)')
-    .run(u.username, bcrypt.hashSync(u.password, 12), u.role, u.matricule, u.full_name);
-  audit(req, 'USER_CREATE', `${u.matricule} (${u.role})`);
-  res.json({ success: true });
-});
-
-app.put('/api/users/:id', auth, supervisorOnly, (req, res) => {
-  const u = readUserBody(req.body);
-  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
-  if (!target) return res.status(404).json({ error: 'Utilisateur introuvable' });
-  const err = userFieldError(u, req.user) || (u.password ? passwordError(u.password, u) : null);
-  if (err) return res.status(400).json({ error: err });
-  if (target.role === 'admin' && req.user.role !== 'admin') return res.status(403).json({ error: 'Réservé aux admins' });
-  if (target.id === req.user.id && u.role !== target.role) return res.status(400).json({ error: 'Vous ne pouvez pas modifier votre propre rôle' });
-  if (db.prepare('SELECT 1 FROM users WHERE (username IN (?, ?) OR matricule IN (?, ?)) AND id != ?').get(u.username, u.matricule, u.username, u.matricule, target.id)) {
-    return res.status(400).json({ error: 'Identifiant ou Matricule déjà utilisé' });
-  }
-  if (u.password) {
-    db.prepare('UPDATE users SET username = ?, password = ?, role = ?, matricule = ?, full_name = ?, must_change_password = 1 WHERE id = ?')
-      .run(u.username, bcrypt.hashSync(u.password, 12), u.role, u.matricule, u.full_name, target.id);
-  } else {
-    db.prepare('UPDATE users SET username = ?, role = ?, matricule = ?, full_name = ? WHERE id = ?')
-      .run(u.username, u.role, u.matricule, u.full_name, target.id);
-  }
-  audit(req, 'USER_UPDATE', `${u.matricule} (${u.role})`);
-  res.json({ success: true });
-});
-
-app.delete('/api/users/:id', auth, supervisorOnly, (req, res) => {
-  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
-  if (!target) return res.status(404).json({ error: 'Utilisateur introuvable' });
-  if (target.id === req.user.id) return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' });
-  if (target.role === 'admin' && req.user.role !== 'admin') return res.status(403).json({ error: 'Réservé aux admins' });
-  db.prepare('DELETE FROM users WHERE id = ?').run(target.id);
-  audit(req, 'USER_DELETE', target.matricule);
-  res.json({ success: true });
-});
-
-// مسارات الربط المتعدد (1-to-Many)
-app.get('/api/operation-mappings', (req, res) => {
-  res.json(db.prepare('SELECT * FROM operation_mappings ORDER BY operation_type ASC').all());
-});
-
-app.post('/api/operation-mappings', auth, supervisorOnly, (req, res) => {
-  const { operation_type, defect_types, pdr_sources } = req.body;
-  if (!operation_type) return res.status(400).json({ error: 'Type d\'opération requis' });
-
-  const defs = Array.isArray(defect_types) ? JSON.stringify(defect_types) : JSON.stringify([defect_types || 'Casse']);
-  const srcs = Array.isArray(pdr_sources) ? JSON.stringify(pdr_sources) : JSON.stringify([pdr_sources || '0']);
-
-  db.prepare(`
-    INSERT INTO operation_mappings (operation_type, defect_types, pdr_sources)
-    VALUES (?, ?, ?)
-    ON CONFLICT(operation_type) DO UPDATE SET 
-      defect_types = excluded.defect_types,
-      pdr_sources = excluded.pdr_sources
-  `).run(operation_type.trim(), defs, srcs);
-
-  res.json({ success: true });
-});
-
-app.delete('/api/operation-mappings/:id', auth, supervisorOnly, (req, res) => {
-  db.prepare('DELETE FROM operation_mappings WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
-app.get('/api/points', (req, res) => {
-  res.json(db.prepare('SELECT id, point_name, reference_code, family, unit_price, image_data FROM points_catalog ORDER BY point_name ASC').all());
-});
-
-app.post('/api/points', auth, supervisorOnly, (req, res) => {
-  const { point_name, reference_code, family, unit_price, image_data } = req.body;
-  if (!point_name || !reference_code || !family) return res.status(400).json({ error: 'Tous les champs sont requis' });
-
-  const pName = point_name.trim();
-  const rCode = reference_code.trim();
-  const price = Math.min(Math.max(parseFloat(unit_price) || 0, 0), 100000);
-  let finalImg = safeImage(image_data) || getPhoto(pName, rCode);
-
-  db.prepare(`
-    INSERT INTO points_catalog (point_name, reference_code, family, unit_price, image_data)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(point_name) DO UPDATE SET
-      reference_code = excluded.reference_code,
-      family = excluded.family,
-      unit_price = excluded.unit_price,
-      image_data = CASE WHEN excluded.image_data != '' THEN excluded.image_data ELSE points_catalog.image_data END
-  `).run(pName, rCode, family.trim(), price, finalImg);
-
-  res.json({ success: true });
-});
-
-app.put('/api/points/:id', auth, supervisorOnly, (req, res) => {
-  const { point_name, reference_code, family, unit_price, image_data } = req.body;
-  const id = req.params.id;
-
-  const existing = db.prepare('SELECT * FROM points_catalog WHERE id = ?').get(id);
-  if (!existing) return res.status(404).json({ error: 'Point introuvable' });
-  if (!point_name || !reference_code || !family) return res.status(400).json({ error: 'Tous les champs sont requis' });
-
-  const pName = point_name.trim();
-  const rCode = reference_code.trim();
-  const price = Math.min(Math.max(parseFloat(unit_price) || 0, 0), 100000);
-  let finalImg = safeImage(image_data) || existing.image_data || getPhoto(pName, rCode);
-
-  db.prepare(`
-    UPDATE points_catalog 
-    SET point_name = ?, reference_code = ?, family = ?, unit_price = ?, image_data = ?
-    WHERE id = ?
-  `).run(pName, rCode, family.trim(), price, finalImg, id);
-
-  res.json({ success: true });
-});
-
-app.delete('/api/points/:id', auth, supervisorOnly, (req, res) => {
-  db.prepare('DELETE FROM points_catalog WHERE id = ?').run(req.params.id);
-  audit(req, 'POINT_DELETE', req.params.id);
-  res.json({ success: true });
-});
-
-app.post('/api/points/rescan-photos', auth, supervisorOnly, (req, res) => {
-  indexPhotos();
-  const allPoints = db.prepare('SELECT id, point_name, reference_code FROM points_catalog').all();
-  const updateStmt = db.prepare('UPDATE points_catalog SET image_data = ? WHERE id = ?');
-
-  let updated = 0;
-  db.exec('BEGIN TRANSACTION;');
-  allPoints.forEach(pt => {
-    const found = getPhoto(pt.point_name, pt.reference_code);
-    if (found) {
-      updateStmt.run(found, pt.id);
-      updated++;
-    }
-  });
-  db.exec('COMMIT;');
-  res.json({ success: true, updated, totalPhotos: photoMap.size });
-});
-
 app.get('/api/operations', (req, res) => {
   res.json(db.prepare('SELECT * FROM repairs ORDER BY id DESC').all());
 });
 
-app.post('/api/operations', auth, (req, res) => {
-  const b = req.body;
-  for (const k of Object.keys(b)) if (typeof b[k] === 'string') b[k] = b[k].trim().slice(0, 500);
-  if (['operation_date', 'zone', 'point_name', 'reference_code', 'intervention_type', 'defect_type'].some(k => !b[k])) {
-    return res.status(400).json({ error: 'Champs obligatoires manquants' });
-  }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.operation_date)) return res.status(400).json({ error: 'Date invalide' });
-  for (const [k, max] of [['repair_duration', 1440], ['downtime_duration', 1440], ['spare_parts_qty', 1000]]) {
-    b[k] = Math.min(Math.max(parseInt(b[k], 10) || 0, 0), max);
-  }
-  const pdrSource = (b.spare_part_name || '0').trim();
-  
-  let unitPrice = 0;
-  const pt = db.prepare('SELECT unit_price FROM points_catalog WHERE point_name = ? OR reference_code = ?').get(b.point_name, b.reference_code);
-  if (pt) unitPrice = pt.unit_price || 0;
-
-  const isConsumed = pdrSource !== '0' && pdrSource !== '';
-  const qty = isConsumed ? (parseInt(b.spare_parts_qty, 10) || 1) : 0;
-  const totalCost = unitPrice * qty;
-  const machineName = b.machine || b.panel_name || '';
-
-  db.prepare(`
-    INSERT INTO repairs (technician_id, technician_name, matricule, operation_date, shift, zone, panel_name, panel_number, point_name, reference_code, point_type, item_inspected, intervention_type, defect_type, spare_part_id, spare_part_name, spare_parts_qty, unit_price_eur, total_cost_eur, repair_duration, downtime_duration, stops_machine, observations)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    req.user.id, req.user.full_name, req.user.matricule, b.operation_date, b.shift || 'Shift 1', b.zone, machineName,
-    b.panel_number || '-', b.point_name, b.reference_code, b.point_type, b.item_inspected, b.intervention_type, b.defect_type,
-    null, pdrSource, qty, unitPrice, totalCost, parseInt(b.repair_duration, 10) || 0,
-    parseInt(b.downtime_duration, 10) || 0, b.stops_machine ? 1 : 0, b.observations || ''
-  );
-  res.json({ success: true });
-});
-
-app.delete('/api/operations/:id', auth, (req, res) => {
-  if (req.user.role === 'admin' || req.user.role === 'supervisor') {
-    db.prepare('DELETE FROM repairs WHERE id = ?').run(req.params.id);
-  } else {
-    db.prepare('DELETE FROM repairs WHERE id = ? AND technician_id = ?').run(req.params.id, req.user.id);
-  }
-  audit(req, 'OPERATION_DELETE', req.params.id);
-  res.json({ success: true });
+app.get('/api/points', (req, res) => {
+  res.json(db.prepare('SELECT id, point_name, reference_code, family, unit_price, image_data FROM points_catalog ORDER BY point_name ASC').all());
 });
 
 app.get('/api/carts', (req, res) => {
@@ -868,97 +558,8 @@ app.get('/api/carts', (req, res) => {
   res.json(carts.map(c => ({ ...c, items: items.filter(i => i.cart_id === c.id) })));
 });
 
-app.post('/api/cart-movements', auth, (req, res) => {
-  const { action_type } = req.body || {};
-  const qty = Number.parseInt(req.body?.quantity, 10);
-  if (!['take', 'return'].includes(action_type)) return res.status(400).json({ error: 'Action invalide' });
-  if (!Number.isInteger(qty) || qty < 1 || qty > 10000) return res.status(400).json({ error: 'Quantité invalide' });
-  const item = db.prepare('SELECT * FROM cart_items WHERE id = ?').get(Number.parseInt(req.body?.item_id, 10));
-  if (!item) return res.status(404).json({ error: 'Article introuvable' });
-  if (action_type === 'take' && item.quantity < qty) return res.status(400).json({ error: 'Stock insuffisant' });
-  const newQty = item.quantity + (action_type === 'take' ? -qty : qty);
-  db.exec('BEGIN');
-  try {
-    db.prepare('UPDATE cart_items SET quantity = ? WHERE id = ?').run(newQty, item.id);
-    db.prepare('INSERT INTO cart_movements (cart_id, item_id, item_name, technician_name, action_type, quantity) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(item.cart_id, item.id, item.item_name, req.user.full_name, action_type, qty);
-    db.exec('COMMIT');
-  } catch (e) { db.exec('ROLLBACK'); throw e; }
-  res.json({ success: true, remaining: newQty });
-});
-
-app.get('/api/cart-movements', (req, res) => {
-  res.json(db.prepare('SELECT * FROM cart_movements ORDER BY id DESC LIMIT 50').all());
-});
-
-app.get('/api/tasks', (req, res) => {
-  res.json(db.prepare('SELECT * FROM daily_tasks ORDER BY id DESC').all());
-});
-
-app.post('/api/tasks', auth, (req, res) => {
-  if (req.user.role === 'technician') return res.status(403).json({ error: 'Réservé aux chefs et superviseurs' });
-  if (!String(req.body?.title || '').trim()) return res.status(400).json({ error: 'Titre obligatoire' });
-  db.prepare('INSERT INTO daily_tasks (title, description, target_zone, shift_name, priority) VALUES (?, ?, ?, ?, ?)')
-    .run(req.body.title, req.body.description, req.body.target_zone, req.body.shift_name, req.body.priority || 'Normale');
-  res.json({ success: true });
-});
-
-app.patch('/api/tasks/:id/status', auth, leaderOrSupervisor, (req, res) => {
-  const status = req.body?.status === 'completed' ? 'completed' : 'pending';
-  db.prepare('UPDATE daily_tasks SET status = ? WHERE id = ?').run(status, req.params.id);
-  res.json({ success: true });
-});
-
-app.get('/api/handovers', (req, res) => {
-  res.json(db.prepare('SELECT * FROM shift_handovers ORDER BY id DESC LIMIT 30').all());
-});
-
-app.post('/api/handovers', auth, (req, res) => {
-  db.prepare('INSERT INTO shift_handovers (shift_name, outgoing_tech, incoming_tech, summary) VALUES (?, ?, ?, ?)')
-    .run(req.body.shift_name, req.body.outgoing_tech, req.user.full_name, req.body.summary);
-  res.json({ success: true });
-});
-
-// مسارات إدارة الألواح CRUD
 app.get('/api/panels', (req, res) => {
   res.json(db.prepare('SELECT * FROM panels ORDER BY current_zone, panel_name').all());
-});
-
-app.post('/api/panels', auth, supervisorOnly, (req, res) => {
-  const { panel_name, panel_number, current_zone } = req.body;
-  if (!panel_name || !current_zone) return res.status(400).json({ error: 'Nom et Zone obligatoires' });
-  db.prepare('INSERT INTO panels (panel_name, panel_number, current_zone) VALUES (?, ?, ?)')
-    .run(panel_name.trim(), (panel_number || '-').trim(), current_zone.trim());
-  res.json({ success: true });
-});
-
-app.put('/api/panels/:id', auth, supervisorOnly, (req, res) => {
-  const { panel_name, panel_number, current_zone } = req.body;
-  if (!panel_name || !current_zone) return res.status(400).json({ error: 'Nom et Zone obligatoires' });
-  db.prepare('UPDATE panels SET panel_name = ?, panel_number = ?, current_zone = ? WHERE id = ?')
-    .run(panel_name.trim(), (panel_number || '-').trim(), current_zone.trim(), req.params.id);
-  res.json({ success: true });
-});
-
-app.delete('/api/panels/:id', auth, supervisorOnly, (req, res) => {
-  db.prepare('DELETE FROM panels WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
-app.get('/api/panel-movements', (req, res) => {
-  res.json(db.prepare('SELECT * FROM panel_movements ORDER BY id DESC').all());
-});
-
-app.post('/api/panel-movements', auth, (req, res) => {
-  const { panel_id, to_zone, reason } = req.body;
-  const panel = db.prepare('SELECT * FROM panels WHERE id = ?').get(panel_id);
-  if (!panel) return res.status(404).json({ error: 'Panneau introuvable' });
-  if (panel.current_zone === to_zone) return res.status(400).json({ error: 'Déjà dans cette zone' });
-
-  db.prepare('UPDATE panels SET current_zone = ? WHERE id = ?').run(to_zone, panel_id);
-  db.prepare('INSERT INTO panel_movements (panel_name, panel_number, from_zone, to_zone, operator_matricule, reason) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(panel.panel_name, panel.panel_number, panel.current_zone, to_zone, req.user.matricule, reason);
-  res.json({ success: true });
 });
 
 app.get('/api/config', (req, res) => {
@@ -968,117 +569,9 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-app.post('/api/config/options', auth, supervisorOnly, (req, res) => {
-  const { category, option_value } = req.body || {};
-  const val = String(option_value || '').trim();
-  if (!OPTION_CATEGORIES.includes(category) || !val || val.length > 100) return res.status(400).json({ error: 'Champs requis ou invalides' });
-  if (db.prepare('SELECT 1 FROM options_config WHERE category = ? AND LOWER(option_value) = LOWER(?)').get(category, val)) {
-    return res.status(400).json({ error: 'Cet élément existe déjà' });
-  }
-  db.prepare('INSERT INTO options_config (category, option_value) VALUES (?, ?)').run(category, val);
-  audit(req, 'CONFIG_ADD', `${category}: ${val}`);
-  res.json({ success: true });
-});
-
-app.delete('/api/config/options/:id', auth, supervisorOnly, (req, res) => {
-  db.prepare('DELETE FROM options_config WHERE id = ?').run(req.params.id);
-  audit(req, 'CONFIG_DELETE', req.params.id);
-  res.json({ success: true });
-});
-
-app.get('/api/audit', auth, supervisorOnly, (req, res) => {
-  res.json(db.prepare('SELECT * FROM audit_log ORDER BY id DESC LIMIT 100').all());
-});
-
-app.get('/api/analytics', auth, leaderOrSupervisor, (req, res) => {
-  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
-  const from = isDate(req.query.from) ? req.query.from : '0000-01-01';
-  const to = isDate(req.query.to) ? req.query.to : '9999-12-31';
-  const ops = db.prepare('SELECT * FROM repairs WHERE substr(operation_date, 1, 10) BETWEEN ? AND ?').all(from, to);
-  let totalRepairTime = 0, totalDowntime = 0, totalSparePartsQty = 0, totalSparePartsCost = 0;
-  let casseQty = 0, casseCost = 0, damagedQty = 0, damagedCost = 0, machineStops = 0;
-
-  const zoneMap = {}, interMap = {}, defectMap = {}, partsMap = {};
-
-  ops.forEach(o => {
-    totalRepairTime += o.repair_duration;
-    totalDowntime += o.downtime_duration;
-    totalSparePartsQty += o.spare_parts_qty;
-    totalSparePartsCost += o.total_cost_eur;
-
-    if (o.defect_type === 'Casse') {
-      casseQty += o.spare_parts_qty;
-      casseCost += o.total_cost_eur;
-    }
-    if (o.defect_type === 'Endommagé') {
-      damagedQty += o.spare_parts_qty;
-      damagedCost += o.total_cost_eur;
-    }
-    if (o.stops_machine === 1 || o.downtime_duration > 0) {
-      machineStops++;
-    }
-
-    zoneMap[o.zone] = zoneMap[o.zone] || { time: 0, parts: 0 };
-    zoneMap[o.zone].time += o.repair_duration;
-    zoneMap[o.zone].parts += o.spare_parts_qty;
-
-    interMap[o.intervention_type] = (interMap[o.intervention_type] || 0) + 1;
-    defectMap[o.defect_type] = (defectMap[o.defect_type] || 0) + 1;
-    if (o.spare_parts_qty > 0 && o.spare_part_name && o.spare_part_name !== '0') {
-      partsMap[o.spare_part_name] = (partsMap[o.spare_part_name] || 0) + o.spare_parts_qty;
-    }
-  });
-
-  const operatingHours = parseFloat(req.query.operating_hours) || 8.0;
-  const days = new Set(ops.map(o => String(o.operation_date).slice(0, 10))).size || 1;
-  const operatingMinutes = operatingHours * 60 * days; // heures ouvrées × nombre de jours avec activité
-  const mttr = machineStops > 0 ? (totalDowntime / machineStops).toFixed(2) : '0';
-  const mtbf = machineStops > 0 ? (((operatingMinutes - totalDowntime) / 60) / machineStops).toFixed(2) : 'N/A';
-  const availability = operatingMinutes > 0 ? (((operatingMinutes - totalDowntime) / operatingMinutes) * 100).toFixed(1) : '100';
-
-  res.json({
-    kpis: {
-      totalInterventions: ops.length,
-      totalSparePartsQty,
-      totalSparePartsCost: totalSparePartsCost.toFixed(2),
-      casseQty,
-      casseCost: casseCost.toFixed(2),
-      damagedQty,
-      damagedCost: damagedCost.toFixed(2),
-      totalRepairTime,
-      totalDowntime,
-      machineStops,
-      mttr,
-      mtbf,
-      availability: String(Math.min(100, Math.max(0, parseFloat(availability))))
-    },
-    zones: zoneMap,
-    interventions: interMap,
-    defects: defectMap,
-    topParts: partsMap
-  });
-});
-
 app.use('/api', (req, res) => res.status(404).json({ error: 'Route introuvable' }));
-app.use((err, req, res, next) => {
-  if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Fichier trop volumineux (3 Mo max)' });
-  if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Requête invalide' });
-  console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}:`, err.message);
-  res.status(500).json({ error: 'Erreur interne du serveur' });
-});
 
-function backupDb() {
-  try {
-    const dir = path.join(__dirname, 'backups');
-    fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, `bb_int_${new Date().toISOString().slice(0, 10)}.db`);
-    if (!fs.existsSync(file)) db.exec(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
-    fs.readdirSync(dir).filter(f => f.endsWith('.db')).sort().slice(0, -14).forEach(f => fs.unlinkSync(path.join(dir, f)));
-  } catch (e) { console.error('Sauvegarde impossible:', e.message); }
-}
-backupDb();
-setInterval(backupDb, 6 * 3600 * 1000).unref();
-
+// التعديل المهم جداً لقراءة البورت أوتوماتيكيا في Railway وفي أي بلاصة:
 const port = process.env.PORT || 3000;
 const host = process.env.HOST || '0.0.0.0';
 
