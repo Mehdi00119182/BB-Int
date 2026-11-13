@@ -58,15 +58,6 @@ const db = new DatabaseSync(path.join(__dirname, 'bb_int_sebn.db'));
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA busy_timeout = 5000;');
 
-try {
-  const tableInfo = db.prepare("PRAGMA table_info(operation_mappings)").all();
-  if (tableInfo.length > 0 && !tableInfo.some(c => c.name === 'defect_types')) {
-    db.exec("DROP TABLE operation_mappings;");
-  }
-} catch (e) {
-  console.warn("Migration notice:", e.message);
-}
-
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,6 +69,7 @@ db.exec(`
     birth_date TEXT,
     hire_date TEXT,
     family_status TEXT DEFAULT 'Célibataire',
+    must_change_password INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -145,370 +137,40 @@ db.exec(`
     quantity INTEGER DEFAULT 0
   );
 
-  CREATE TABLE IF NOT EXISTS cart_movements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    cart_id INTEGER NOT NULL,
-    item_id INTEGER NOT NULL,
-    item_name TEXT NOT NULL,
-    technician_name TEXT NOT NULL,
-    action_type TEXT NOT NULL,
-    quantity INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS daily_tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    description TEXT,
-    target_zone TEXT,
-    shift_name TEXT,
-    priority TEXT DEFAULT 'Normale',
-    status TEXT DEFAULT 'pending'
-  );
-
-  CREATE TABLE IF NOT EXISTS shift_handovers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    shift_name TEXT NOT NULL,
-    outgoing_tech TEXT NOT NULL,
-    incoming_tech TEXT NOT NULL,
-    summary TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-
   CREATE TABLE IF NOT EXISTS panels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     panel_name TEXT NOT NULL,
     panel_number TEXT NOT NULL,
     current_zone TEXT NOT NULL
   );
-
-  CREATE TABLE IF NOT EXISTS panel_movements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    panel_name TEXT NOT NULL,
-    panel_number TEXT NOT NULL,
-    from_zone TEXT NOT NULL,
-    to_zone TEXT NOT NULL,
-    operator_matricule TEXT NOT NULL,
-    reason TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
 `);
-
-try { db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0'); } catch (e) { /* déjà présent */ }
-db.exec(`
-  CREATE TABLE IF NOT EXISTS audit_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    actor TEXT, action TEXT NOT NULL, detail TEXT, ip TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
-  CREATE INDEX IF NOT EXISTS idx_repairs_date ON repairs(operation_date);
-  CREATE INDEX IF NOT EXISTS idx_repairs_zone ON repairs(zone);
-  CREATE INDEX IF NOT EXISTS idx_repairs_tech ON repairs(technician_id);
-  CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id);
-`);
-const audit = (req, action, detail = '') => {
-  try {
-    const u = req.user;
-    db.prepare('INSERT INTO audit_log (actor, action, detail, ip) VALUES (?, ?, ?, ?)')
-      .run(u ? `${u.full_name} (${u.matricule})` : '-', action, String(detail).slice(0, 300), req.ip || '');
-  } catch (e) { /* l'audit ne doit jamais bloquer */ }
-};
 
 const ensureAllTechnicians = () => {
   const insertUser = db.prepare(`
-    INSERT INTO users (username, password, role, matricule, full_name, birth_date, hire_date, family_status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, password, role, matricule, full_name, must_change_password)
+    VALUES (?, ?, ?, ?, ?, 1)
     ON CONFLICT(matricule) DO NOTHING
   `);
 
   const exists = db.prepare('SELECT 1 FROM users WHERE matricule = ?');
-  const flag = db.prepare('UPDATE users SET must_change_password = 1 WHERE matricule = ?');
   for (const [uname, mat, full] of [['khalid', '10001', 'Khalid Hmimsa'], ['mehdi', '10002', 'Mehdi Habti']]) {
     if (exists.get(mat)) continue;
-    const initial = process.env.INITIAL_ADMIN_PASSWORD || crypto.randomBytes(6).toString('base64url');
-    insertUser.run(uname, bcrypt.hashSync(initial, 12), 'supervisor', mat, full, '', '', 'Marié(e)');
-    flag.run(mat);
-    console.log(`🔑 Compte initial créé : ${uname} / ${initial} (changement obligatoire à la 1re connexion)`);
+    const initial = crypto.randomBytes(4).toString('base64url');
+    insertUser.run(uname, bcrypt.hashSync(initial, 12), 'supervisor', mat, full);
+    console.log(`🔑 Compte initial créé : ${uname} / ${initial}`);
   }
-
-  const techniciansList = [
-    { matricule: '19871', name: 'Achraf Befoula' }, { matricule: '20954', name: 'Chouny ilyass' },
-    { matricule: '19678', name: 'younes Bilal' }, { matricule: '19706', name: 'Ahanjir Taoufik' },
-    { matricule: '20819', name: 'Azrour Azdinne' }, { matricule: '21060', name: 'Mohammed El jarti' },
-    { matricule: '20991', name: 'Othmane Lamzouri' }, { matricule: '20953', name: 'Hicham Elkhalfouni' },
-    { matricule: '21035', name: 'elasri abdelaali' }, { matricule: '15623', name: 'Mohammed Achraf Ziuan' },
-    { matricule: '20746', name: 'Aimad Alaoui' }, { matricule: '21062', name: 'El guerouani Nouh' },
-    { matricule: '19875', name: 'Abdellatif Mouhcin' }, { matricule: '15496', name: 'Atemni Mohammed' },
-    { matricule: '20870', name: 'Samir Hrach_Aras' }, { matricule: '20179', name: 'souhail foulla' },
-    { matricule: '20297', name: 'El habti El mehdi' }, { matricule: '20818', name: 'Driss Fahli' },
-    { matricule: '21034', name: 'thitah saad' }, { matricule: '18242', name: 'Soulaiman Maimouni' },
-    { matricule: '18037', name: 'Metouali oussama' }, { matricule: '20992', name: 'Yassine ghali' },
-    { matricule: '17584', name: 'Lahcen Chahid' }, { matricule: '20906', name: 'Amine Boudasse' },
-    { matricule: '20918', name: 'Achraf Gzal' }, { matricule: '21127', name: 'Ayoub Lahlou' },
-    { matricule: '20908', name: 'Ayob Abbas' }, { matricule: '21126', name: 'Abde Nacer Eltourchi' },
-    { matricule: '20917', name: 'Amine Legnafdi' }, { matricule: '14102', name: 'EL FARIHI AZEDINE' },
-    { matricule: '7165',  name: 'ELHARRAK abderahim' }, { matricule: '7319',  name: 'Elhjiri ahmed' },
-    { matricule: '21057', name: 'Arich Abdellah' }, { matricule: '17886', name: 'Mohamed EL FEDYLY' },
-    { matricule: '20914', name: 'Yassine Lazrak' }
-  ];
-
-  db.exec('BEGIN TRANSACTION;');
-  for (const tech of techniciansList) {
-    if (exists.get(tech.matricule)) continue;
-    insertUser.run(tech.matricule, bcrypt.hashSync(tech.matricule, 10), 'technician', tech.matricule, tech.name, '', '', 'Célibataire');
-    flag.run(tech.matricule);
-  }
-  db.exec('COMMIT;');
 };
 ensureAllTechnicians();
 
 const ensureDefaults = () => {
-  const newPieceTypes = [
-    'Master', 'Slave A', 'Slave B', 'Slave', 'Carte communication', 'Power 12V',
-    'Transformateur 12V', 'Power 24V', 'Transformateur 24V', 'Sensor, 60mm ground EH02.V160',
-    'Sensor, 60mm ground', 'Micro switch', 'Label Printer', 'Câble RJ9', 'Multiprise',
-    'Mounting', 'Photocellule', 'Photocellule 2', 'Switch', 'Domino single 3D',
-    'Domino double 3D', 'Schrumpf photocellule', 'Extension', 'Frein', 'Point de soudage',
-    'Guidage', 'Ressort', 'Pince crocodile', 'Passe-fil', 'Support', 'Charbon',
-    'Support charbon', 'Simulation de panneau', 'CP', 'PC', 'Tige fixe', 'Tige mobile',
-    'Tige pin', 'Tige spéciale', 'Tige four', 'Tige masse', 'Masse', 'Support contre-pièce',
-    'Contre-pièce', 'Collier de visualisation', 'Ajustement de mesure', 'Alimentation PC',
-    'Orientation CP', 'Imprimante', 'Câble VGA', 'Câble COM', 'Plaquette charbon',
-    'Bassin', 'Communication', 'Rail', 'Sortie de panneau', 'Entrée de panneau',
-    'Écrasement', 'Nettoyage de rail', 'Nettoyage d\'imprimante', 'Ajouter matricule',
-    'Redémarrage PC', 'Fixation de panneau', 'Câble HDMI', 'Préventive de panneau'
-  ];
-
-  db.exec("DELETE FROM options_config WHERE category = 'piece_type';");
-  const insertOpt = db.prepare('INSERT INTO options_config (category, option_value) VALUES (?, ?)');
-  
-  db.exec('BEGIN TRANSACTION;');
-  for (const item of newPieceTypes) {
-    insertOpt.run('piece_type', item.trim());
+  const defaultZones = ['TFL-01', 'TFL-02', 'TFL-03', 'TFL-04', 'MTT', 'Rework', 'Backup'];
+  const count = db.prepare('SELECT COUNT(*) as cnt FROM options_config').get().cnt;
+  if (count === 0) {
+    const ins = db.prepare('INSERT INTO options_config (category, option_value) VALUES (?, ?)');
+    defaultZones.forEach(z => ins.run('zone', z));
   }
-
-  const existingOpts = db.prepare("SELECT category, option_value FROM options_config").all();
-  const hasOpt = (cat, val) => existingOpts.some(e => e.category === cat && e.option_value.toLowerCase() === val.toLowerCase());
-
-  const defaults = {
-    zone: ['TFL-01', 'TFL-02', 'TFL-03', 'TFL-04', 'MTT', 'Rework', 'Backup', 'Zon Rép', 'Bridge'],
-    machine: [
-      'Q7-LL', 'Q7-RL', 'Q9-LL', 'Q9-RL', 'Q9-AH-LL', 'Q9-AH-RL',
-      'Q7-LL-Mèr', 'Q7-RL-Mèr', 'Q9-LL-Mèr', 'Q9-RL-Mèr', 'Q9-AH-LL-Mèr', 'Q9-AH-RL-Mèr',
-      'MTT-Q7-01', 'MTT-Q7-02', 'MTT-Q7-03', 'MTT-Q7-04', 'MTT-Q9-01', 'MTT-Q9-02', 'MTT-Q9-03',
-      'Extension'
-    ],
-    operation_type: ['Changement', 'Réparation', 'Réglage', 'Sérrage', 'Montage', 'Esthétique', 'Corrective', 'Simulation', 'Ajout de panneau'],
-    defect_type: ['Casse', 'Endommagé', 'Orientation', 'Resserrage', 'Manque', 'Dégradation', 'Remise en état', 'Vérif.Conformité', 'Demande PPR'],
-    pdr_source: ['0', 'Magasin BB', 'Chariot', 'Magasin Central']
-  };
-
-  for (const [cat, items] of Object.entries(defaults)) {
-    for (const item of items) {
-      if (!hasOpt(cat, item)) insertOpt.run(cat, item);
-    }
-  }
-
-  const defaultMappings = [
-    ['Changement', JSON.stringify(['Casse', 'Endommagé']), JSON.stringify(['Magasin BB', 'Chariot', 'Magasin Central'])],
-    ['Réparation', JSON.stringify(['Endommagé', 'Dégradation']), JSON.stringify(['Chariot', '0'])],
-    ['Réglage', JSON.stringify(['Orientation']), JSON.stringify(['0'])],
-    ['Sérrage', JSON.stringify(['Resserrage']), JSON.stringify(['0'])],
-    ['Montage', JSON.stringify(['Manque']), JSON.stringify(['Magasin BB', 'Chariot'])],
-    ['Esthétique', JSON.stringify(['Dégradation']), JSON.stringify(['0'])],
-    ['Corrective', JSON.stringify(['Remise en état', 'Endommagé']), JSON.stringify(['Chariot', 'Magasin BB', '0'])],
-    ['Simulation', JSON.stringify(['Vérif.Conformité']), JSON.stringify(['0'])],
-    ['Ajout de panneau', JSON.stringify(['Demande PPR']), JSON.stringify(['0'])]
-  ];
-
-  const insertMapping = db.prepare(`
-    INSERT INTO operation_mappings (operation_type, defect_types, pdr_sources)
-    VALUES (?, ?, ?)
-    ON CONFLICT(operation_type) DO NOTHING
-  `);
-  for (const [op, defs, srcs] of defaultMappings) {
-    insertMapping.run(op, defs, srcs);
-  }
-
-  const cartsCount = db.prepare('SELECT COUNT(*) as cnt FROM carts').get().cnt;
-  if (cartsCount === 0) {
-    const c1 = Number(db.prepare('INSERT INTO carts (cart_name, zone_assigned) VALUES (?, ?)').run('Chariot Lignes TFL-01 & TFL-02', 'TFL-01').lastInsertRowid);
-    const insertItem = db.prepare('INSERT INTO cart_items (cart_id, item_name, reference_code, quantity) VALUES (?, ?, ?, ?)');
-    insertItem.run(c1, 'Frein de maintien', 'FRN-001', 25);
-    insertItem.run(c1, 'Cellule Optique Détection', 'PH-CEL-99', 10);
-  }
-
-  const allPanelsList = [
-    { name: 'Q7 LL 40', zone: 'TFL-01' }, { name: 'Q7 LL 44', zone: 'TFL-01' }, { name: 'Q7 LL 21', zone: 'TFL-01' },
-    { name: 'Q7 RL 01', zone: 'TFL-01' }, { name: 'Q7 LL 24', zone: 'TFL-01' }, { name: 'Q7 LL 26', zone: 'TFL-01' },
-    { name: 'Q7 LL 12', zone: 'TFL-01' }, { name: 'Q7 LL 38', zone: 'TFL-01' }, { name: 'Q7 LL 06', zone: 'TFL-01' },
-    { name: 'Q7 RL 03', zone: 'TFL-01' }, { name: 'Q7 LL 07', zone: 'TFL-01' }, { name: 'Q7 LL 25', zone: 'TFL-01' },
-    { name: 'Q7 LL 19', zone: 'TFL-01' }, { name: 'Q7 LL 35', zone: 'TFL-01' }, { name: 'Q7 LL 09', zone: 'TFL-01' },
-    { name: 'Q7 RL 02', zone: 'TFL-01' }, { name: 'Q7 LL 03', zone: 'TFL-01' }, { name: 'Q7 LL 43', zone: 'TFL-01' },
-    { name: 'Q7 LL 42', zone: 'TFL-01' }, { name: 'Q9 AH RL 01', zone: 'TFL-01' },
-    { name: 'Q9 AH LL 05', zone: 'TFL-02' }, { name: 'Q9 AH LL 09', zone: 'TFL-02' }, { name: 'Q9 AH LL 01', zone: 'TFL-02' },
-    { name: 'Q9 AH LL 10', zone: 'TFL-02' }, { name: 'Q9 AH LL 13', zone: 'TFL-02' }, { name: 'Q9 LL 03', zone: 'TFL-02' },
-    { name: 'Q9 AH LL 07', zone: 'TFL-02' }, { name: 'Q9 AH LL 16', zone: 'TFL-02' }, { name: 'Q9 AH LL 06', zone: 'TFL-02' },
-    { name: 'Q9 AH LL 03', zone: 'TFL-02' }, { name: 'Q9 AH LL 08', zone: 'TFL-02' }, { name: 'Q9 LL 04', zone: 'TFL-02' },
-    { name: 'Q9 AH LL 11', zone: 'TFL-02' }, { name: 'Q9 AH LL 14', zone: 'TFL-02' }, { name: 'Q7 LL 29', zone: 'TFL-02' },
-    { name: 'Q9 AH LL 12', zone: 'TFL-02' }, { name: 'Q9 AH LL 02', zone: 'TFL-02' }, { name: 'Q9 AH LL 04', zone: 'TFL-02' },
-    { name: 'Q9 AH LL 18', zone: 'TFL-02' }, { name: 'Q9 LL 01', zone: 'TFL-02' },
-    { name: 'Q7 LL 31', zone: 'TFL-03' }, { name: 'Q7 LL 28', zone: 'TFL-03' }, { name: 'Q7 LL 30', zone: 'TFL-03' },
-    { name: 'Q7 LL 36', zone: 'TFL-03' }, { name: 'Q7 LL 32', zone: 'TFL-03' }, { name: 'Q7 LL 45', zone: 'TFL-03' },
-    { name: 'Q7 LL 14', zone: 'TFL-03' }, { name: 'Q7 LL 05', zone: 'TFL-03' }, { name: 'Q7 LL 13', zone: 'TFL-03' },
-    { name: 'Q7 LL 27', zone: 'TFL-03' }, { name: 'Q7 LL 22', zone: 'TFL-03' }, { name: 'Q7 LL 08', zone: 'TFL-03' },
-    { name: 'Q7 LL 04', zone: 'TFL-03' }, { name: 'Q7 LL 47', zone: 'TFL-03' }, { name: 'Q7 LL 39', zone: 'TFL-03' },
-    { name: 'Q7 LL 46', zone: 'TFL-03' }, { name: 'Q7 LL 11', zone: 'TFL-03' }, { name: 'Q7 LL 16', zone: 'TFL-03' },
-    { name: 'Q7 LL 20', zone: 'TFL-03' }, { name: 'Q7 LL 33', zone: 'TFL-03' },
-    { name: 'Q7 LL 48', zone: 'TFL-04' }, { name: 'Q9 LL 02', zone: 'TFL-04' }, { name: 'Q9 LL 05', zone: 'TFL-04' },
-    { name: 'Q7 LL 01', zone: 'TFL-04' }, { name: 'Q7 LL 53', zone: 'TFL-04' }, { name: 'Q7 LL 23', zone: 'TFL-04' },
-    { name: 'Q7 LL 10 Kaizen', zone: 'TFL-04' }, { name: 'AH LL 15', zone: 'TFL-04' }, { name: 'Q7 LL 60', zone: 'TFL-04' },
-    { name: 'Q7 LL 59', zone: 'TFL-04' }, { name: 'Q7 LL 50', zone: 'TFL-04' }, { name: 'Q7 LL 52', zone: 'TFL-04' },
-    { name: 'Q7 LL 57', zone: 'TFL-04' }, { name: 'Q7 LL 49', zone: 'TFL-04' }, { name: 'Q7 LL 37', zone: 'TFL-04' },
-    { name: 'Q7 LL 41', zone: 'TFL-04' }, { name: 'Q7 LL 55', zone: 'TFL-04' }, { name: 'Q7 LL 54', zone: 'TFL-04' },
-    { name: 'Q7 LL 51', zone: 'TFL-04' },
-    { name: 'MTT 01 Q9', zone: 'MTT' }, { name: 'MTT 02 Q7', zone: 'MTT' }, { name: 'MTT 03 Q7 RL/LL', zone: 'MTT' },
-    { name: 'MTT 04', zone: 'MTT' }, { name: 'MTT 02', zone: 'MTT' },
-    { name: 'Q7 LL 03 rework', zone: 'Rework' }, { name: 'Q7 LL 02 rework', zone: 'Rework' },
-    { name: 'Q9AH RL N01 rework', zone: 'Rework' }, { name: 'Q9 RL 01 rework', zone: 'Rework' },
-    { name: 'Q7 RL 01 rework', zone: 'Rework' }, { name: 'Q9AH LL 01 rework', zone: 'Rework' },
-    { name: 'Q9 LL 01 rework', zone: 'Rework' }, { name: 'Q7 LL 01 rework', zone: 'Rework' },
-    { name: 'Q7 LL 04 P.M Rework', zone: 'Backup' }, { name: 'Q9 AH RL 03', zone: 'Backup' },
-    { name: 'Q7 LL 02', zone: 'Backup' }, { name: 'Q9 RL 01', zone: 'Backup' }, { name: 'Q7 RL 04', zone: 'Backup' },
-    { name: 'Q7 LL 17', zone: 'Backup' }, { name: 'Q7 LL 34', zone: 'Backup' }, { name: 'Q7 LL 56', zone: 'Backup' },
-    { name: 'Q9 RL 02', zone: 'Backup' }, { name: 'Q9 AH RL 02', zone: 'Backup' }, { name: 'Q7 LL 15', zone: 'Backup' },
-    { name: 'Q9 AH LL 17', zone: 'Backup' }, { name: 'Q9 - LL - P.M', zone: 'Backup' }
-  ];
-
-  const existingPanels = db.prepare('SELECT panel_name, current_zone FROM panels').all();
-  if (existingPanels.length <= 5) {
-    db.exec('DELETE FROM panels;');
-    existingPanels.length = 0;
-  }
-
-  const checkPanel = (name, zone) => existingPanels.some(p => p.panel_name.toLowerCase() === name.toLowerCase() && p.current_zone.toLowerCase() === zone.toLowerCase());
-  const insertPanel = db.prepare('INSERT INTO panels (panel_name, panel_number, current_zone) VALUES (?, ?, ?)');
-
-  for (const p of allPanelsList) {
-    if (!checkPanel(p.name, p.zone)) {
-      const numMatch = p.name.match(/\b(\d{2})\b/);
-      const num = numMatch ? numMatch[1] : '-';
-      insertPanel.run(p.name, num, p.zone);
-    }
-  }
-
-  db.exec('COMMIT;');
 };
 ensureDefaults();
-
-const photoMap = new Map();
-function indexPhotos() {
-  photoMap.clear();
-  if (!fs.existsSync(photosDir)) return;
-  const validExts = new Set(['.jpg', '.jpeg', '.png', '.webp']);
-  try {
-    const files = fs.readdirSync(photosDir);
-    for (const file of files) {
-      const ext = path.extname(file).toLowerCase();
-      if (validExts.has(ext)) {
-        const base = path.basename(file, ext);
-        const cleanBase = base.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        if (cleanBase && !photoMap.has(cleanBase)) {
-          photoMap.set(cleanBase, `/photos/${file}`);
-        }
-      }
-    }
-  } catch (e) {}
-}
-indexPhotos();
-
-function getPhoto(pointName, refCode) {
-  const cleanRef = refCode ? String(refCode).replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
-  const cleanPt = pointName ? String(pointName).replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
-  return photoMap.get(cleanRef) || photoMap.get(cleanPt) || '';
-}
-
-function findExcelFile(names) {
-  for (const n of names) {
-    const p = path.join(__dirname, n);
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
-}
-
-const currentPointsCount = db.prepare('SELECT COUNT(*) as cnt FROM points_catalog').get().cnt;
-if (currentPointsCount === 0) {
-  const matchFile = findExcelFile(['match cod.xlsx', 'match_cod.xlsx', 'matchcod.xlsx']);
-  const prixFile = findExcelFile(['prix .xlsx', 'prix.xlsx', 'prix .xls', 'prix.xls']);
-  const catalogJsonPath = path.join(__dirname, 'catalog.json');
-
-  const insertPt = db.prepare(`
-    INSERT INTO points_catalog (point_name, reference_code, family, unit_price, image_data)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(point_name) DO UPDATE SET
-      reference_code = excluded.reference_code,
-      family = excluded.family,
-      unit_price = excluded.unit_price,
-      image_data = excluded.image_data
-  `);
-
-  if (XLSX && matchFile && prixFile) {
-    try {
-      const wbPrix = XLSX.readFile(prixFile);
-      const dataPrix = XLSX.utils.sheet_to_json(wbPrix.Sheets[wbPrix.SheetNames[0]], { defval: '' });
-
-      const wbMatch = XLSX.readFile(matchFile);
-      const dataMatch = XLSX.utils.sheet_to_json(wbMatch.Sheets[wbMatch.SheetNames[0]], { defval: '' });
-
-      const cleanKey = s => s ? String(s).replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : '';
-      const prixDict = {};
-
-      for (const r of dataPrix) {
-        const rawRef = String(r['reference Code'] || r['Reference Code'] || Object.values(r)[0] || '').trim();
-        if (!rawRef) continue;
-        const key = cleanKey(rawRef);
-        const cat = String(r['Catégorie de pièce'] || r['Categorie'] || r['Famille'] || 'Non défini').trim();
-        const rawPrice = r['price'] !== undefined ? r['price'] : r['Price'];
-        const price = parseFloat(String(rawPrice).replace(',', '.')) || 0;
-
-        if (!prixDict[key] || price > prixDict[key].price) {
-          prixDict[key] = { rawRef, family: cat, price };
-        }
-      }
-
-      let usedKeys = new Set();
-      let seenPoints = new Set();
-      let catalogBackup = [];
-
-      db.exec('BEGIN TRANSACTION;');
-      for (const r of dataMatch) {
-        const pName = String(r['Kurzname'] || r['Point'] || Object.values(r)[0] || '').trim();
-        const rCode = String(r['Teilenummer'] || r['Reference'] || Object.values(r)[1] || '').trim();
-        if (!pName || !rCode) continue;
-
-        const upperP = pName.toUpperCase();
-        if (seenPoints.has(upperP)) continue;
-        seenPoints.add(upperP);
-
-        const normR = cleanKey(rCode);
-        usedKeys.add(normR);
-
-        const pData = prixDict[normR];
-        const family = pData ? pData.family : 'Non défini';
-        const price = pData ? pData.price : 0;
-        const photo = getPhoto(pName, rCode);
-
-        insertPt.run(pName, rCode, family, price, photo);
-        catalogBackup.push({ point_name: pName, reference_code: rCode, family, unit_price: price });
-      }
-      db.exec('COMMIT;');
-      fs.writeFileSync(catalogJsonPath, JSON.stringify(catalogBackup, null, 2), 'utf8');
-    } catch (e) {}
-  }
-}
-
-const OPTION_CATEGORIES = ['zone', 'machine', 'pdr_source', 'piece_type', 'operation_type', 'defect_type'];
-const ROLES = ['technician', 'team_leader', 'supervisor', 'admin'];
 
 function auth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
@@ -544,6 +206,22 @@ app.get('/api/me', auth, (req, res) => {
   res.json({ id, username, role, matricule, full_name, must_change_password: !!must_change_password });
 });
 
+// المسار المضاف خصيصاً لتحديث البروفيل وكلمة المرور بدون أخطاء
+app.put('/api/user/profile', auth, (req, res) => {
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '').trim();
+  const me = req.user;
+  if (!username) return res.status(400).json({ error: 'Identifiant obligatoire' });
+  
+  if (password) {
+    db.prepare('UPDATE users SET username = ?, password = ?, must_change_password = 0 WHERE id = ?')
+      .run(username, bcrypt.hashSync(password, 12), me.id);
+  } else {
+    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, me.id);
+  }
+  res.json({ success: true });
+});
+
 app.get('/api/operations', (req, res) => {
   res.json(db.prepare('SELECT * FROM repairs ORDER BY id DESC').all());
 });
@@ -571,7 +249,6 @@ app.get('/api/config', (req, res) => {
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Route introuvable' }));
 
-// التعديل المهم جداً لقراءة البورت أوتوماتيكيا في Railway وفي أي بلاصة:
 const port = process.env.PORT || 3000;
 const host = process.env.HOST || '0.0.0.0';
 
