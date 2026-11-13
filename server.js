@@ -33,8 +33,9 @@ if (!fs.existsSync(photosDir)) {
 }
 app.use('/photos', express.static(photosDir));
 
-const db = new DatabaseSync('bb_int_sebn.db');
+const db = new DatabaseSync(path.join(__dirname, 'bb_int_sebn.db'));
 db.exec('PRAGMA journal_mode = WAL;');
+db.exec('PRAGMA busy_timeout = 5000;');
 
 try {
   const tableInfo = db.prepare("PRAGMA table_info(operation_mappings)").all();
@@ -56,6 +57,7 @@ db.exec(`
     birth_date TEXT,
     hire_date TEXT,
     family_status TEXT DEFAULT 'Célibataire',
+    must_change_password INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -172,10 +174,12 @@ db.exec(`
   );
 `);
 
+try { db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0'); } catch (e) {}
+
 const ensureAllTechnicians = () => {
   const insertUser = db.prepare(`
-    INSERT INTO users (username, password, role, matricule, full_name, birth_date, hire_date, family_status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (username, password, role, matricule, full_name, birth_date, hire_date, family_status, must_change_password)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     ON CONFLICT(matricule) DO NOTHING
   `);
 
@@ -214,7 +218,6 @@ const ensureAllTechnicians = () => {
 ensureAllTechnicians();
 
 const ensureDefaults = () => {
-  // 1. تحديث قائمة Type de pièce: حذف القديم وتثبيت الـ 66 عنصراً المطلوبة
   const newPieceTypes = [
     'Master', 'Slave A', 'Slave B', 'Slave', 'Carte communication', 'Power 12V',
     'Transformateur 12V', 'Power 24V', 'Transformateur 24V', 'Sensor, 60mm ground EH02.V160',
@@ -239,7 +242,6 @@ const ensureDefaults = () => {
     insertOpt.run('piece_type', item.trim());
   }
 
-  // 2. فئات الخيارات الأخرى
   const existingOpts = db.prepare("SELECT category, option_value FROM options_config").all();
   const hasOpt = (cat, val) => existingOpts.some(e => e.category === cat && e.option_value.toLowerCase() === val.toLowerCase());
 
@@ -439,8 +441,6 @@ if (currentPointsCount === 0) {
         }
       }
 
-      let inserted = 0;
-      let linkedPhotos = 0;
       const usedKeys = new Set();
       const seenPoints = new Set();
       const catalogBackup = [];
@@ -462,22 +462,18 @@ if (currentPointsCount === 0) {
         const family = pData ? pData.family : 'Non défini';
         const price = pData ? pData.price : 0;
         const photo = getPhoto(pName, rCode);
-        if (photo) linkedPhotos++;
 
         insertPt.run(pName, rCode, family, price, photo);
         catalogBackup.push({ point_name: pName, reference_code: rCode, family, unit_price: price });
-        inserted++;
       }
 
       for (const [norm, pData] of Object.entries(prixDict)) {
         const upperR = pData.rawRef.toUpperCase();
         if (!usedKeys.has(norm) && !seenPoints.has(upperR)) {
           const photo = getPhoto(pData.rawRef, pData.rawRef);
-          if (photo) linkedPhotos++;
           insertPt.run(pData.rawRef, pData.rawRef, pData.family, pData.price, photo);
           catalogBackup.push({ point_name: pData.rawRef, reference_code: pData.rawRef, family: pData.family, unit_price: pData.price });
           seenPoints.add(upperR);
-          inserted++;
         }
       }
       db.exec('COMMIT;');
@@ -493,7 +489,10 @@ function auth(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Non connecté' });
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET);
+    const user = db.prepare('SELECT id, username, role, matricule, full_name, must_change_password FROM users WHERE id = ?').get(payload.id);
+    if (!user) return res.status(401).json({ error: 'Compte introuvable' });
+    req.user = user;
     next();
   } catch (err) {
     res.status(401).json({ error: 'Session expirée' });
@@ -515,7 +514,8 @@ function leaderOrSupervisor(req, res, next) {
 }
 
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '');
   if (!username || !password) return res.status(400).json({ error: 'Identifiants obligatoires' });
 
   const user = db.prepare('SELECT * FROM users WHERE (username = ? OR matricule = ?)').get(username, username);
@@ -530,23 +530,33 @@ app.post('/api/login', (req, res) => {
     { expiresIn: '12h' }
   );
 
-  res.json({ token, user: { id: user.id, username: user.username, role: user.role, full_name: user.full_name, matricule: user.matricule } });
+  res.json({
+    token,
+    must_change_password: !!user.must_change_password,
+    user: { id: user.id, username: user.username, role: user.role, full_name: user.full_name, matricule: user.matricule }
+  });
+});
+
+app.get('/api/me', auth, (req, res) => {
+  const { id, username, role, matricule, full_name, must_change_password } = req.user;
+  res.json({ id, username, role, matricule, full_name, must_change_password: !!must_change_password });
 });
 
 app.put('/api/user/profile', auth, (req, res) => {
-  const { username, password } = req.body;
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '').trim();
   const userId = req.user.id;
 
   if (!username) return res.status(400).json({ error: 'Identifiant obligatoire' });
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username.trim(), userId);
+  const existing = db.prepare('SELECT id FROM users WHERE (username = ? OR matricule = ?) AND id != ?').get(username, username, userId);
   if (existing) return res.status(400).json({ error: 'Cet identifiant est déjà utilisé' });
 
-  if (password && password.trim() !== '') {
-    const hashedPassword = bcrypt.hashSync(password.trim(), 10);
-    db.prepare('UPDATE users SET username = ?, password = ? WHERE id = ?').run(username.trim(), hashedPassword, userId);
+  if (password !== '') {
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    db.prepare('UPDATE users SET username = ?, password = ?, must_change_password = 0 WHERE id = ?').run(username, hashedPassword, userId);
   } else {
-    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username.trim(), userId);
+    db.prepare('UPDATE users SET username = ? WHERE id = ?').run(username, userId);
   }
 
   res.json({ success: true });
@@ -557,9 +567,9 @@ app.post('/api/users/:id/reset', auth, leaderOrSupervisor, (req, res) => {
   if (!targetUser) return res.status(404).json({ error: 'Utilisateur introuvable' });
 
   const defaultHash = bcrypt.hashSync(targetUser.matricule, 10);
-  db.prepare('UPDATE users SET username = ?, password = ? WHERE id = ?').run(targetUser.matricule, defaultHash, targetUser.id);
+  db.prepare('UPDATE users SET username = ?, password = ?, must_change_password = 0 WHERE id = ?').run(targetUser.matricule, defaultHash, targetUser.id);
 
-  res.json({ success: true, matricule: targetUser.matricule });
+  res.json({ success: true, matricule: targetUser.matricule, temp_password: targetUser.matricule });
 });
 
 app.get('/api/users', auth, leaderOrSupervisor, (req, res) => {
@@ -572,10 +582,13 @@ app.post('/api/users', auth, supervisorOnly, (req, res) => {
     return res.status(400).json({ error: 'Champs obligatoires manquants' });
   }
 
-  const hashedPassword = bcrypt.hashSync(b.password, 10);
+  const existing = db.prepare('SELECT id FROM users WHERE username = ? OR matricule = ?').get(b.username.trim(), b.matricule.trim());
+  if (existing) return res.status(400).json({ error: 'Identifiant ou Matricule déjà utilisé' });
+
+  const hashedPassword = bcrypt.hashSync(b.password.trim(), 10);
   db.prepare(`
-    INSERT INTO users (username, password, role, matricule, full_name)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO users (username, password, role, matricule, full_name, must_change_password)
+    VALUES (?, ?, ?, ?, ?, 0)
   `).run(b.username.trim(), hashedPassword, b.role, b.matricule.trim(), b.full_name.trim());
 
   res.json({ success: true });
@@ -594,7 +607,7 @@ app.put('/api/users/:id', auth, supervisorOnly, (req, res) => {
 
   if (b.password && b.password.trim() !== '') {
     const hashedPassword = bcrypt.hashSync(b.password.trim(), 10);
-    db.prepare('UPDATE users SET username = ?, password = ?, role = ?, matricule = ?, full_name = ? WHERE id = ?')
+    db.prepare('UPDATE users SET username = ?, password = ?, role = ?, matricule = ?, full_name = ?, must_change_password = 0 WHERE id = ?')
       .run(b.username.trim(), hashedPassword, b.role, b.matricule.trim(), b.full_name.trim(), id);
   } else {
     db.prepare('UPDATE users SET username = ?, role = ?, matricule = ?, full_name = ? WHERE id = ?')
@@ -609,7 +622,6 @@ app.delete('/api/users/:id', auth, supervisorOnly, (req, res) => {
   res.json({ success: true });
 });
 
-// مسارات الربط المتعدد (1-to-Many)
 app.get('/api/operation-mappings', (req, res) => {
   res.json(db.prepare('SELECT * FROM operation_mappings ORDER BY operation_type ASC').all());
 });
@@ -765,7 +777,7 @@ app.post('/api/cart-movements', auth, (req, res) => {
   }
   db.prepare('UPDATE cart_items SET quantity = ? WHERE id = ?').run(newQty, item_id);
   db.prepare('INSERT INTO cart_movements (cart_id, item_id, item_name, technician_name, action_type, quantity) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(cart_id, item_id, item.item_name, req.user.full_name, action_type, qty);
+    .run(item.cart_id, item_id, item.item_name, req.user.full_name, action_type, qty);
   res.json({ success: true, remaining: newQty });
 });
 
@@ -784,6 +796,12 @@ app.post('/api/tasks', auth, (req, res) => {
   res.json({ success: true });
 });
 
+app.patch('/api/tasks/:id/status', auth, leaderOrSupervisor, (req, res) => {
+  const status = req.body?.status === 'completed' ? 'completed' : 'pending';
+  db.prepare('UPDATE daily_tasks SET status = ? WHERE id = ?').run(status, req.params.id);
+  res.json({ success: true });
+});
+
 app.get('/api/handovers', (req, res) => {
   res.json(db.prepare('SELECT * FROM shift_handovers ORDER BY id DESC LIMIT 30').all());
 });
@@ -794,7 +812,6 @@ app.post('/api/handovers', auth, (req, res) => {
   res.json({ success: true });
 });
 
-// مسارات إدارة الألواح CRUD
 app.get('/api/panels', (req, res) => {
   res.json(db.prepare('SELECT * FROM panels ORDER BY current_zone, panel_name').all());
 });
@@ -855,8 +872,11 @@ app.delete('/api/config/options/:id', auth, supervisorOnly, (req, res) => {
   res.json({ success: true });
 });
 
-app.get('/api/analytics', auth, supervisorOnly, (req, res) => {
-  const ops = db.prepare('SELECT * FROM repairs').all();
+app.get('/api/analytics', auth, leaderOrSupervisor, (req, res) => {
+  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+  const from = isDate(req.query.from) ? req.query.from : '0000-01-01';
+  const to = isDate(req.query.to) ? req.query.to : '9999-12-31';
+  const ops = db.prepare('SELECT * FROM repairs WHERE substr(operation_date, 1, 10) BETWEEN ? AND ?').all(from, to);
   let totalRepairTime = 0, totalDowntime = 0, totalSparePartsQty = 0, totalSparePartsCost = 0;
   let casseQty = 0, casseCost = 0, damagedQty = 0, damagedCost = 0, machineStops = 0;
 
@@ -892,7 +912,8 @@ app.get('/api/analytics', auth, supervisorOnly, (req, res) => {
   });
 
   const operatingHours = parseFloat(req.query.operating_hours) || 8.0;
-  const operatingMinutes = operatingHours * 60;
+  const days = new Set(ops.map(o => String(o.operation_date).slice(0, 10))).size || 1;
+  const operatingMinutes = operatingHours * 60 * days;
   const mttr = machineStops > 0 ? (totalDowntime / machineStops).toFixed(2) : '0';
   const mtbf = machineStops > 0 ? (((operatingMinutes - totalDowntime) / 60) / machineStops).toFixed(2) : 'N/A';
   const availability = operatingMinutes > 0 ? (((operatingMinutes - totalDowntime) / operatingMinutes) * 100).toFixed(1) : '100';
@@ -911,7 +932,7 @@ app.get('/api/analytics', auth, supervisorOnly, (req, res) => {
       machineStops,
       mttr,
       mtbf,
-      availability: availability > 100 ? '100' : availability
+      availability: String(Math.min(100, Math.max(0, parseFloat(availability))))
     },
     zones: zoneMap,
     interventions: interMap,
@@ -920,6 +941,8 @@ app.get('/api/analytics', auth, supervisorOnly, (req, res) => {
   });
 });
 
+app.use('/api', (req, res) => res.status(404).json({ error: 'Route introuvable' }));
+
 app.listen(port, host, () => {
-  console.log(`🚀 Serveur actif sur http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
+  console.log(`🚀 Serveur actif sur http://${host}:${port}`);
 });
