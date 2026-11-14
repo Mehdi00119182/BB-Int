@@ -33,7 +33,16 @@ if (!fs.existsSync(photosDir)) {
 }
 app.use('/photos', express.static(photosDir));
 
-const db = new DatabaseSync(path.join(__dirname, 'bb_int_sebn.db'));
+const dataDir = fs.existsSync('/data') ? '/data' : __dirname;
+const dbPath = path.join(dataDir, 'bb_int_sebn.db');
+
+// نسخ قاعدة البيانات الأولية إلى الديسك الدائم في أول تشغيل فقط
+if (dataDir === '/data' && !fs.existsSync(dbPath) && fs.existsSync(path.join(__dirname, 'bb_int_sebn.db'))) {
+  fs.copyFileSync(path.join(__dirname, 'bb_int_sebn.db'), dbPath);
+}
+
+const db = new DatabaseSync(dbPath);
+console.log(`📦 Base de données active sur : ${dbPath}`);
 db.exec('PRAGMA journal_mode = WAL;');
 db.exec('PRAGMA busy_timeout = 5000;');
 
